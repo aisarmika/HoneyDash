@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HoneyDash | Reports</title>
+
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="dist/css/adminlte.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+
+        <!-- Navbar (same as before) -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Sidebar with Reports active -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <a href="dashboard.html" class="brand-link">
+                <img src="dist/img/AdminLTELogo.png" alt="Logo" class="brand-image img-circle elevation-3">
+                <span class="brand-text font-weight-light">HoneyDash</span>
+            </a>
+            <div class="sidebar">
+                <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                    <div class="image">
+                        <img src="dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User">
+                    </div>
+                    <div class="info">
+                        <a href="#" class="d-block">Security Analyst</a>
+                    </div>
+                </div>
+                <nav class="mt-2">
+                    <ul class="nav nav-pills nav-sidebar flex-column">
+                        <li class="nav-item">
+                            <a href="dashboard.html" class="nav-link">
+                                <i class="nav-icon fas fa-tachometer-alt"></i>
+                                <p>Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="sessions.html" class="nav-link">
+                                <i class="nav-icon fas fa-list"></i>
+                                <p>Attack Sessions</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="alerts.html" class="nav-link">
+                                <i class="nav-icon fas fa-exclamation-triangle"></i>
+                                <p>Alerts</p>
+                                <span class="badge badge-info right">8</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="reports.html" class="nav-link active">
+                                <i class="nav-icon fas fa-chart-bar"></i>
+                                <p>Reports</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="configuration.html" class="nav-link">
+                                <i class="nav-icon fas fa-cog"></i>
+                                <p>Configuration</p>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            <div class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1 class="m-0">Reports & Analytics</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="dashboard.html">Home</a></li>
+                                <li class="breadcrumb-item active">Reports</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="content">
+                <div class="container-fluid">
+                    <!-- Report Controls -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Generate Report</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Report Type</label>
+                                        <select class="form-control" id="reportType">
+                                            <option>Executive Summary</option>
+                                            <option>Detailed Attack Analysis</option>
+                                            <option>Geographic Distribution</option>
+                                            <option>Top Attackers</option>
+                                            <option>Trend Analysis</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Time Period</label>
+                                        <select class="form-control" id="timePeriod">
+                                            <option>Last 24 Hours</option>
+                                            <option>Last 7 Days</option>
+                                            <option>Last 30 Days</option>
+                                            <option>Last Quarter</option>
+                                            <option>Custom Range</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Format</label>
+                                        <select class="form-control" id="reportFormat">
+                                            <option>PDF</option>
+                                            <option>Excel</option>
+                                            <option>CSV</option>
+                                            <option>HTML</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>&nbsp;</label>
+                                        <button class="btn btn-primary btn-block" onclick="generateReport()">
+                                            <i class="fas fa-file-pdf"></i> Generate Report
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Reports -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card card-primary card-outline">
+                                <div class="card-header">
+                                    <h3 class="card-title">Top 10 Attack Sources</h3>
+                                    <div class="card-tools">
+                                        <button class="btn btn-tool" onclick="exportTopSources()">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>IP Address</th>
+                                                <th>Country</th>
+                                                <th>Attack Count</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>1</td>
+                                                <td>185.142.53.12</td>
+                                                <td>Russia</td>
+                                                <td>1,245</td>
+                                            </tr>
+                                            <tr>
+                                                <td>2</td>
+                                                <td>103.112.45.78</td>
+                                                <td>China</td>
+                                                <td>987</td>
+                                            </tr>
+                                            <tr>
+                                                <td>3</td>
+                                                <td>45.125.67.89</td>
+                                                <td>Brazil</td>
+                                                <td>876</td>
+                                            </tr>
+                                            <tr>
+                                                <td>4</td>
+                                                <td>91.234.56.78</td>
+                                                <td>Ukraine</td>
+                                                <td>654</td>
+                                            </tr>
+                                            <tr>
+                                                <td>5</td>
+                                                <td>197.156.89.12</td>
+                                                <td>Egypt</td>
+                                                <td>543</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card card-primary card-outline">
+                                <div class="card-header">
+                                    <h3 class="card-title">Attack Type Distribution</h3>
+                                    <div class="card-tools">
+                                        <button class="btn btn-tool" onclick="exportAttackTypes()">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Attack Type</th>
+                                                <th>Count</th>
+                                                <th>Percentage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>SSH Brute Force</td>
+                                                <td>4,234</td>
+                                                <td>42%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>HTTP Scan</td>
+                                                <td>2,845</td>
+                                                <td>28%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>FTP Login</td>
+                                                <td>1,523</td>
+                                                <td>15%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Telnet Scan</td>
+                                                <td>1,012</td>
+                                                <td>10%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Other</td>
+                                                <td>512</td>
+                                                <td>5%</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trend Chart -->
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">Attack Trends - Last 30 Days</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="trendChart" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Geographic Distribution -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card card-primary card-outline">
+                                <div class="card-header">
+                                    <h3 class="card-title">Geographic Distribution</h3>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Country</th>
+                                                <th>Attacks</th>
+                                                <th>Unique IPs</th>
+                                                <th>Top Attack Type</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Russia</td>
+                                                <td>3,245</td>
+                                                <td>156</td>
+                                                <td>SSH</td>
+                                            </tr>
+                                            <tr>
+                                                <td>China</td>
+                                                <td>2,987</td>
+                                                <td>143</td>
+                                                <td>HTTP</td>
+                                            </tr>
+                                            <tr>
+                                                <td>USA</td>
+                                                <td>2,654</td>
+                                                <td>234</td>
+                                                <td>SSH</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Brazil</td>
+                                                <td>1,876</td>
+                                                <td>89</td>
+                                                <td>FTP</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Ukraine</td>
+                                                <td>1,654</td>
+                                                <td>67</td>
+                                                <td>SSH</td>
+                                            </tr>
+                                            <tr>
+                                                <td>UK</td>
+                                                <td>1,423</td>
+                                                <td>98</td>
+                                                <td>HTTP</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Germany</td>
+                                                <td>1,234</td>
+                                                <td>76</td>
+                                                <td>SSH</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Netherlands</td>
+                                                <td>987</td>
+                                                <td>54</td>
+                                                <td>HTTP</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scheduled Reports -->
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">Scheduled Reports</h3>
+                            <div class="card-tools">
+                                <button class="btn btn-primary btn-sm" onclick="scheduleReport()">
+                                    <i class="fas fa-plus"></i> New Schedule
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Report Name</th>
+                                        <th>Frequency</th>
+                                        <th>Format</th>
+                                        <th>Recipients</th>
+                                        <th>Last Sent</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Daily Executive Summary</td>
+                                        <td>Daily</td>
+                                        <td>PDF</td>
+                                        <td>admin@honeydash.com</td>
+                                        <td>2024-01-15 08:00</td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Weekly Threat Analysis</td>
+                                        <td>Weekly (Mon)</td>
+                                        <td>Excel</td>
+                                        <td>team@honeydash.com</td>
+                                        <td>2024-01-14 09:00</td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Monthly Geographic Report</td>
+                                        <td>Monthly</td>
+                                        <td>PDF</td>
+                                        <td>research@honeydash.com</td>
+                                        <td>2024-01-01 10:00</td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer class="main-footer">
+            <strong>HoneyDash v1.0 - Real-Time Honeypot Visualization & Alerting</strong>
+        </footer>
+    </div>
+
+    <script src="plugins/jquery/jquery.min.js"></script>
+    <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="dist/js/adminlte.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var ctx = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
+                    datasets: [{
+                        label: 'Attacks',
+                        data: [3542, 4123, 3876, 4234, 4567],
+                        borderColor: 'rgb(23, 162, 184)',
+                        tension: 0.4
+                    }]
+                }
+            });
+        });
+
+        function generateReport() {
+            alert('Generating report...');
+        }
+
+        function scheduleReport() {
+            alert('Schedule new report dialog would open here');
+        }
+
+        function exportTopSources() {
+            alert('Exporting top sources...');
+        }
+
+        function exportAttackTypes() {
+            alert('Exporting attack types...');
+        }
+    </script>
+</body>
+
+</html>

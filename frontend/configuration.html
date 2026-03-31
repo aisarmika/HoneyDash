@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HoneyDash | Configuration</title>
+
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="dist/css/adminlte.min.css">
+</head>
+
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+
+        <!-- Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Sidebar with Configuration active -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <a href="dashboard.html" class="brand-link">
+                <img src="dist/img/AdminLTELogo.png" alt="Logo" class="brand-image img-circle elevation-3">
+                <span class="brand-text font-weight-light">HoneyDash</span>
+            </a>
+            <div class="sidebar">
+                <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                    <div class="image">
+                        <img src="dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User">
+                    </div>
+                    <div class="info">
+                        <a href="#" class="d-block">Security Analyst</a>
+                    </div>
+                </div>
+                <nav class="mt-2">
+                    <ul class="nav nav-pills nav-sidebar flex-column">
+                        <li class="nav-item">
+                            <a href="dashboard.html" class="nav-link">
+                                <i class="nav-icon fas fa-tachometer-alt"></i>
+                                <p>Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="sessions.html" class="nav-link">
+                                <i class="nav-icon fas fa-list"></i>
+                                <p>Attack Sessions</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="alerts.html" class="nav-link">
+                                <i class="nav-icon fas fa-exclamation-triangle"></i>
+                                <p>Alerts</p>
+                                <span class="badge badge-info right">8</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="reports.html" class="nav-link">
+                                <i class="nav-icon fas fa-chart-bar"></i>
+                                <p>Reports</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="configuration.html" class="nav-link active">
+                                <i class="nav-icon fas fa-cog"></i>
+                                <p>Configuration</p>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            <div class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1 class="m-0">System Configuration</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="dashboard.html">Home</a></li>
+                                <li class="breadcrumb-item active">Configuration</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="content">
+                <div class="container-fluid">
+                    <!-- Honeypot Connection Settings (HD_UC_03) -->
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Honeypot Connections</h3>
+                            <div class="card-tools">
+                                <span class="badge badge-success">Connected</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Honeypot Type</label>
+                                        <select class="form-control">
+                                            <option>Cowrie (SSH/Telnet)</option>
+                                            <option>Dionaea (Services)</option>
+                                            <option>Glastopf (Web)</option>
+                                            <option>Conpot (ICS/SCADA)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Connection Mode</label>
+                                        <select class="form-control">
+                                            <option>Live Connection</option>
+                                            <option>Log File Upload</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Connection Settings -->
+                            <div id="liveConnection">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Host/IP</label>
+                                            <input type="text" class="form-control" value="192.168.1.100">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Port</label>
+                                            <input type="text" class="form-control" value="2222">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Protocol</label>
+                                            <select class="form-control">
+                                                <option>TCP</option>
+                                                <option>UDP</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Username (Optional)</label>
+                                            <input type="text" class="form-control" placeholder="username">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Password (Optional)</label>
+                                            <input type="password" class="form-control" placeholder="••••••••">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- File Upload Section -->
+                            <div id="fileUpload" style="display: none;">
+                                <div class="form-group">
+                                    <label>Upload Log File</label>
+                                    <input type="file" class="form-control-file">
+                                    <small class="text-muted">Supported formats: .log, .json, .txt</small>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-success" onclick="testConnection()">
+                                <i class="fas fa-plug"></i> Test Connection
+                            </button>
+                            <button class="btn btn-primary" onclick="saveConnection()">
+                                <i class="fas fa-save"></i> Save Connection
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Alert Configuration (HD_UC_11) -->
+                    <div class="card card-warning">
+                        <div class="card-header">
+                            <h3 class="card-title">Alert Rules</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Rule Name</label>
+                                        <input type="text" class="form-control" value="SSH Brute Force Detection">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Condition</label>
+                                        <select class="form-control">
+                                            <option>Failed Logins > Threshold</option>
+                                            <option>Unique IPs > Threshold</option>
+                                            <option>Requests per Minute</option>
+                                            <option>Anomaly Score</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Threshold</label>
+                                        <input type="number" class="form-control" value="10">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Severity</label>
+                                        <select class="form-control">
+                                            <option>High</option>
+                                            <option>Medium</option>
+                                            <option>Low</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <div class="form-group">
+                                        <label>&nbsp;</label>
+                                        <button class="btn btn-success btn-block" onclick="addRule()">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <table class="table table-bordered mt-3">
+                                <thead>
+                                    <tr>
+                                        <th>Rule Name</th>
+                                        <th>Condition</th>
+                                        <th>Threshold</th>
+                                        <th>Severity</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>SSH Brute Force</td>
+                                        <td>Failed Logins</td>
+                                        <td>10 in 5min</td>
+                                        <td><span class="badge badge-high">High</span></td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                        <td>
+                                            <button class="btn btn-xs btn-warning"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-xs btn-danger"><i class="fas fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Port Scan Detection</td>
+                                        <td>Unique Ports</td>
+                                        <td>20 in 1min</td>
+                                        <td><span class="badge badge-medium">Medium</span></td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                        <td>
+                                            <button class="btn btn-xs btn-warning"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-xs btn-danger"><i class="fas fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Malware Download</td>
+                                        <td>File Download</td>
+                                        <td>Any</td>
+                                        <td><span class="badge badge-high">High</span></td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                        <td>
+                                            <button class="btn btn-xs btn-warning"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-xs btn-danger"><i class="fas fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- API Integration (HD_UC_09, HD_UC_10) -->
+                    <div class="card card-info">
+                        <div class="card-header">
+                            <h3 class="card-title">API Integrations</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-success">
+                                            <h5 class="card-title">GeoIP (MaxMind)</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="form-group">
+                                                <label>License Key</label>
+                                                <input type="password" class="form-control" value="••••••••••••••••">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Database Version</label>
+                                                <select class="form-control">
+                                                    <option>GeoLite2 City (Free)</option>
+                                                    <option>GeoIP2 City (Paid)</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input" checked>
+                                                <label class="form-check-label">Auto-update database</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-warning">
+                                            <h5 class="card-title">VirusTotal</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="form-group">
+                                                <label>API Key</label>
+                                                <input type="password" class="form-control" value="••••••••••••••••">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Rate Limit</label>
+                                                <select class="form-control">
+                                                    <option>Public API (4/min)</option>
+                                                    <option>Premium API</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input" checked>
+                                                <label class="form-check-label">Check file hashes</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="saveAPIs()">
+                                <i class="fas fa-save"></i> Save API Settings
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Data Retention (HD_UC_15) -->
+                    <div class="card card-danger">
+                        <div class="card-header">
+                            <h3 class="card-title">Data Retention</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Raw Logs</label>
+                                        <select class="form-control">
+                                            <option>30 days</option>
+                                            <option selected>60 days</option>
+                                            <option>90 days</option>
+                                            <option>180 days</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Enriched Data</label>
+                                        <select class="form-control">
+                                            <option>60 days</option>
+                                            <option selected>90 days</option>
+                                            <option>180 days</option>
+                                            <option>365 days</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Alerts</label>
+                                        <select class="form-control">
+                                            <option>30 days</option>
+                                            <option>60 days</option>
+                                            <option selected>90 days</option>
+                                            <option>Forever</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Storage Location</label>
+                                        <input type="text" class="form-control" value="/var/lib/honeydash/data">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Max Storage</label>
+                                        <input type="text" class="form-control" value="100 GB">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Current Usage</label>
+                                        <div class="progress mt-2">
+                                            <div class="progress-bar bg-success" style="width: 45%">45%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-danger" onclick="archiveNow()">
+                                <i class="fas fa-archive"></i> Archive Now
+                            </button>
+                            <button class="btn btn-warning" onclick="purgeNow()">
+                                <i class="fas fa-trash"></i> Purge Old Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Settings -->
+                    <div class="card card-secondary">
+                        <div class="card-header">
+                            <h3 class="card-title">System Settings</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Dashboard Refresh Rate</label>
+                                        <select class="form-control">
+                                            <option>5 seconds</option>
+                                            <option selected>10 seconds</option>
+                                            <option>30 seconds</option>
+                                            <option>1 minute</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Timezone</label>
+                                        <select class="form-control">
+                                            <option>UTC</option>
+                                            <option selected>Asia/Kuala_Lumpur</option>
+                                            <option>America/New_York</option>
+                                            <option>Europe/London</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Date Format</label>
+                                        <select class="form-control">
+                                            <option>YYYY-MM-DD</option>
+                                            <option>DD/MM/YYYY</option>
+                                            <option>MM/DD/YYYY</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Language</label>
+                                        <select class="form-control">
+                                            <option>English</option>
+                                            <option>Bahasa Malaysia</option>
+                                            <option>中文</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Save All Button -->
+                    <div class="row">
+                        <div class="col-12">
+                            <button class="btn btn-primary btn-lg float-right" onclick="saveAllConfig()">
+                                <i class="fas fa-save"></i> Save All Configuration
+                            </button>
+                            <button class="btn btn-secondary btn-lg float-right mr-2" onclick="resetConfig()">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer class="main-footer">
+            <strong>HoneyDash v1.0 - Real-Time Honeypot Visualization & Alerting</strong>
+        </footer>
+    </div>
+
+    <script src="plugins/jquery/jquery.min.js"></script>
+    <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="dist/js/adminlte.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Toggle between live connection and file upload based on selection
+            $('select:contains("Connection Mode")').change(function () {
+                if ($(this).val() === 'Log File Upload') {
+                    $('#liveConnection').hide();
+                    $('#fileUpload').show();
+                } else {
+                    $('#liveConnection').show();
+                    $('#fileUpload').hide();
+                }
+            });
+        });
+
+        function testConnection() {
+            alert('Testing connection to honeypot...');
+            setTimeout(() => alert('Connection successful!'), 1000);
+        }
+
+        function saveConnection() {
+            alert('Connection settings saved!');
+        }
+
+        function addRule() {
+            alert('New alert rule added!');
+        }
+
+        function saveAPIs() {
+            alert('API settings saved!');
+        }
+
+        function archiveNow() {
+            alert('Archiving data...');
+        }
+
+        function purgeNow() {
+            if (confirm('Are you sure you want to purge old data? This cannot be undone!')) {
+                alert('Data purged successfully!');
+            }
+        }
+
+        function saveAllConfig() {
+            alert('All configuration saved!');
+        }
+
+        function resetConfig() {
+            if (confirm('Reset all settings to default?')) {
+                alert('Settings reset!');
+            }
+        }
+    </script>
+</body>
+
+</html>
