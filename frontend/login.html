@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AdminLTE 3 | Log in</title>
+  <title>HoneyDash | Sign In</title>
 
   <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet"
@@ -20,16 +20,20 @@
 <body class="hold-transition login-page">
   <div class="login-box">
     <div class="login-logo">
-      <a href="index2.html"><b>Admin</b>LTE</a>
+      <a href="dashboard.html"><b>Honey</b>Dash</a>
     </div>
     <!-- /.login-logo -->
     <div class="card">
       <div class="card-body login-card-body">
         <p class="login-box-msg">Sign in to start your session</p>
 
-        <form action="index3.html" method="post">
+        <div id="loginError" class="alert alert-danger d-none" role="alert">
+          Invalid email or password.
+        </div>
+
+        <form id="loginForm">
           <div class="input-group mb-3">
-            <input type="email" class="form-control" placeholder="Email">
+            <input type="email" id="loginEmail" class="form-control" placeholder="Email" required>
             <div class="input-group-append">
               <div class="input-group-text">
                 <span class="fas fa-envelope"></span>
@@ -37,7 +41,7 @@
             </div>
           </div>
           <div class="input-group mb-3">
-            <input type="password" class="form-control" placeholder="Password">
+            <input type="password" id="loginPassword" class="form-control" placeholder="Password" required>
             <div class="input-group-append">
               <div class="input-group-text">
                 <span class="fas fa-lock"></span>
@@ -48,35 +52,19 @@
             <div class="col-8">
               <div class="icheck-primary">
                 <input type="checkbox" id="remember">
-                <label for="remember">
-                  Remember Me
-                </label>
+                <label for="remember">Remember Me</label>
               </div>
             </div>
-            <!-- /.col -->
             <div class="col-4">
-              <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+              <button type="submit" id="loginBtn" class="btn btn-primary btn-block">
+                Sign In
+              </button>
             </div>
-            <!-- /.col -->
           </div>
         </form>
 
-        <div class="social-auth-links text-center mb-3">
-          <p>- OR -</p>
-          <a href="#" class="btn btn-block btn-primary">
-            <i class="fab fa-facebook mr-2"></i> Sign in using Facebook
-          </a>
-          <a href="#" class="btn btn-block btn-danger">
-            <i class="fab fa-google-plus mr-2"></i> Sign in using Google+
-          </a>
-        </div>
-        <!-- /.social-auth-links -->
-
-        <p class="mb-1">
-          <a href="forgot-password.html">I forgot my password</a>
-        </p>
-        <p class="mb-0">
-          <a href="register.html" class="text-center">Register a new membership</a>
+        <p class="mt-3 mb-0 text-muted text-center">
+          Default: admin@honeydash.local / admin
         </p>
       </div>
       <!-- /.login-card-body -->
@@ -85,11 +73,55 @@
   <!-- /.login-box -->
 
   <!-- jQuery -->
-  <script src="../../plugins/jquery/jquery.min.js"></script>
+  <script src="plugins/jquery/jquery.min.js"></script>
   <!-- Bootstrap 4 -->
-  <script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
   <!-- AdminLTE App -->
-  <script src="../../dist/js/adminlte.min.js"></script>
+  <script src="dist/js/adminlte.min.js"></script>
+
+  <script>
+    const API_BASE = 'http://localhost:8000';
+
+    // Redirect to dashboard if already logged in
+    if (localStorage.getItem('hd_token')) {
+      window.location.href = 'dashboard.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const errBox = document.getElementById('loginError');
+      errBox.classList.add('d-none');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+
+      try {
+        const resp = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('loginEmail').value,
+            password: document.getElementById('loginPassword').value,
+          }),
+        });
+
+        if (!resp.ok) {
+          errBox.classList.remove('d-none');
+          return;
+        }
+
+        const data = await resp.json();
+        localStorage.setItem('hd_token', data.access_token);
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        errBox.textContent = 'Cannot reach server. Is the backend running?';
+        errBox.classList.remove('d-none');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Sign In';
+      }
+    });
+  </script>
 </body>
 
 </html>

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker --version)",
+      "Bash(python -c \"import bcrypt; print\\(bcrypt.hashpw\\(b''admin'', bcrypt.gensalt\\(\\)\\).decode\\(\\)\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(\"C:\\\\Users\\\\Administrator\\\\Desktop\\\\HoneyDash\\\\.claude\\\\worktrees\\\\elated-neumann\\\\backend\\\\cowrie.json\")",
+      "Bash(\"C:/Users/Administrator/Desktop/HoneyDash/.claude/worktrees/elated-neumann/backend/cowrie.json\")",
+      "Bash(git add:*)"
+    ]
+  }
+}
