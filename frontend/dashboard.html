@@ -125,6 +125,11 @@
             <i class="fas fa-expand-arrows-alt"></i>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" id="logoutBtn" title="Sign out">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </li>
       </ul>
     </nav>
 
@@ -335,70 +340,10 @@
                         <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td>2024-01-15 14:23:45</td>
-                        <td>185.142.53.12</td>
-                        <td>Russia 🇷🇺</td>
-                        <td>SSH Brute Force</td>
-                        <td>22</td>
-                        <td><span class="badge badge-high">High</span></td>
-                        <td>
-                          <button class="btn btn-xs btn-info" onclick="viewDetails('1')">
-                            <i class="fas fa-eye"></i>
-                          </button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>2024-01-15 14:15:22</td>
-                        <td>103.112.45.78</td>
-                        <td>China 🇨🇳</td>
-                        <td>HTTP Scan</td>
-                        <td>80</td>
-                        <td><span class="badge badge-medium">Medium</span></td>
-                        <td>
-                          <button class="btn btn-xs btn-info" onclick="viewDetails('2')">
-                            <i class="fas fa-eye"></i>
-                          </button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>2024-01-15 14:02:11</td>
-                        <td>45.125.67.89</td>
-                        <td>Brazil 🇧🇷</td>
-                        <td>FTP Login</td>
-                        <td>21</td>
-                        <td><span class="badge badge-low">Low</span></td>
-                        <td>
-                          <button class="btn btn-xs btn-info" onclick="viewDetails('3')">
-                            <i class="fas fa-eye"></i>
-                          </button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>2024-01-15 13:45:33</td>
-                        <td>91.234.56.78</td>
-                        <td>Ukraine 🇺🇦</td>
-                        <td>SSH Brute Force</td>
-                        <td>22</td>
-                        <td><span class="badge badge-high">High</span></td>
-                        <td>
-                          <button class="btn btn-xs btn-info" onclick="viewDetails('4')">
-                            <i class="fas fa-eye"></i>
-                          </button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>2024-01-15 13:30:12</td>
-                        <td>197.156.89.12</td>
-                        <td>Egypt 🇪🇬</td>
-                        <td>Telnet Scan</td>
-                        <td>23</td>
-                        <td><span class="badge badge-medium">Medium</span></td>
-                        <td>
-                          <button class="btn btn-xs btn-info" onclick="viewDetails('5')">
-                            <i class="fas fa-eye"></i>
-                          </button>
+                    <tbody id="attacksTableBody">
+                      <tr id="noDataRow">
+                        <td colspan="7" class="text-center text-muted">
+                          <i class="fas fa-spinner fa-spin"></i> Connecting to live feed...
                         </td>
                       </tr>
                     </tbody>
@@ -491,192 +436,252 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
-    $(document).ready(function () {
-      // ==================== INITIALIZE MAP ====================
-      var map = L.map('attack-map').setView([20, 0], 2);
+    // ==================== CONFIG ====================
+    const API_BASE = 'http://localhost:8000';
+    const WS_URL   = 'ws://localhost:8000/ws';
+
+    // ==================== AUTH GUARD ====================
+    const token = localStorage.getItem('hd_token');
+    if (!token) { window.location.href = 'login.html'; }
+
+    function authHeaders() {
+      return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+    }
+
+    async function apiFetch(path) {
+      const r = await fetch(API_BASE + path, { headers: authHeaders() });
+      if (r.status === 401) { localStorage.removeItem('hd_token'); window.location.href = 'login.html'; }
+      if (!r.ok) throw new Error('API error ' + r.status);
+      return r.json();
+    }
+
+    // ==================== WEBSOCKET ====================
+    let ws = null;
+    let wsReconnectDelay = 1000;
+
+    function connectWebSocket() {
+      ws = new WebSocket(WS_URL + '?token=' + encodeURIComponent(token));
+
+      ws.onopen = function () {
+        wsReconnectDelay = 1000;
+        $('.live-indicator').css({ 'background-color': '#28a745', 'animation': '' });
+      };
+
+      ws.onmessage = function (e) {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'new_event')         handleNewEvent(msg.data);
+        if (msg.type === 'enrichment_update') handleEnrichmentUpdate(msg.data);
+        if (msg.type === 'stats_update')      updateStatsBoxes(msg.data);
+      };
+
+      ws.onclose = function () {
+        $('.live-indicator').css('background-color', '#dc3545');
+        setTimeout(connectWebSocket, wsReconnectDelay);
+        wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000);
+      };
+
+      ws.onerror = function () { ws.close(); };
+    }
+
+    // ==================== STATS ====================
+    function updateStatsBoxes(d) {
+      if (d.total_attacks_24h !== undefined) $('#totalAttacks').text(d.total_attacks_24h.toLocaleString());
+      if (d.unique_sources_24h !== undefined) $('#uniqueSources').text(d.unique_sources_24h.toLocaleString());
+      if (d.active_alerts !== undefined) { $('#activeAlerts').text(d.active_alerts); $('#alertCount').text(d.active_alerts); }
+      if (d.high_severity_24h !== undefined) $('#highSeverity').text(d.high_severity_24h.toLocaleString());
+    }
+
+    // ==================== MAP ====================
+    var map, mapMarkersByCountry = {};
+
+    function initMap() {
+      map = L.map('attack-map').setView([20, 0], 2);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(map);
-
-      // Sample attack locations
-      var attackLocations = [
-        { lat: 55.7558, lng: 37.6173, country: 'Russia', count: 156 },
-        { lat: 31.2304, lng: 121.4737, country: 'China', count: 243 },
-        { lat: -23.5505, lng: -46.6333, country: 'Brazil', count: 89 },
-        { lat: 50.4501, lng: 30.5234, country: 'Ukraine', count: 67 },
-        { lat: 26.8206, lng: 30.8025, country: 'Egypt', count: 45 },
-        { lat: 40.7128, lng: -74.0060, country: 'USA', count: 312 },
-        { lat: 51.5074, lng: -0.1278, country: 'UK', count: 167 },
-        { lat: 35.6895, lng: 139.6917, country: 'Japan', count: 98 },
-        { lat: -33.8688, lng: 151.2093, country: 'Australia', count: 76 }
-      ];
-
-      // Add markers to map
-      attackLocations.forEach(function (loc) {
-        var circle = L.circleMarker([loc.lat, loc.lng], {
-          radius: Math.sqrt(loc.count) * 1.5,
-          color: '#dc3545',
-          fillColor: '#f03',
-          fillOpacity: 0.5,
-          weight: 1
-        }).addTo(map);
-
-        circle.bindPopup(`
-            <b>${loc.country}</b><br>
-            Attacks: ${loc.count}
-        `);
-      });
-
-      // ==================== INITIALIZE CHARTS ====================
-
-      // Timeline Chart
-      var ctx = document.getElementById('timelineChart').getContext('2d');
-      var timelineChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          datasets: [{
-            label: 'Attacks',
-            data: [423, 512, 678, 745, 823, 912, 654],
-            borderColor: 'rgb(23, 162, 184)',
-            backgroundColor: 'rgba(23, 162, 184, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          }
-        }
-      });
-
-      // Attack Types Chart
-      var pieCtx = document.getElementById('typesChart').getContext('2d');
-      var typesChart = new Chart(pieCtx, {
-        type: 'doughnut',
-        data: {
-          labels: ['SSH', 'HTTP', 'FTP', 'Telnet', 'Other'],
-          datasets: [{
-            data: [42, 28, 15, 10, 5],
-            backgroundColor: ['#dc3545', '#ffc107', '#28a745', '#17a2b8', '#6c757d'],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'bottom' }
-          }
-        }
-      });
-
-      // ==================== LIVE UPDATES SIMULATION ====================
-      function updateStats() {
-        // Simulate changing numbers
-        var total = Math.floor(Math.random() * 2000) + 1000;
-        var unique = Math.floor(Math.random() * 800) + 400;
-        var alerts = Math.floor(Math.random() * 15) + 5;
-
-        $('#totalAttacks').text(total);
-        $('#uniqueSources').text(unique);
-        $('#activeAlerts').text(alerts);
-        $('#alertCount').text(alerts);
-      }
-
-      // Update every 30 seconds
-      setInterval(updateStats, 30000);
-
-      // ==================== TIME RANGE CHANGE ====================
-      $('#timeRange').change(function () {
-        var range = $(this).val();
-        // Simulate data loading
-        if (range === '24h') {
-          timelineChart.data.labels = ['00', '02', '04', '06', '08', '10', '12', '14', '16', '18', '20', '22'];
-          timelineChart.data.datasets[0].data = [23, 15, 12, 18, 32, 45, 67, 89, 76, 54, 43, 34];
-        } else if (range === '7d') {
-          timelineChart.data.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-          timelineChart.data.datasets[0].data = [423, 512, 678, 745, 823, 912, 654];
-        } else {
-          timelineChart.data.labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-          timelineChart.data.datasets[0].data = [3542, 4123, 3876, 4234];
-        }
-        timelineChart.update();
-      });
-
-      // ==================== REFRESH MAP ====================
-      $('#refreshMap').click(function () {
-        $(this).find('i').addClass('fa-spin');
-        setTimeout(() => {
-          $(this).find('i').removeClass('fa-spin');
-        }, 1000);
-      });
-
-    });
-
-    // ==================== VIEW SESSION DETAILS ====================
-    function viewDetails(id) {
-      var details = {
-        '1': {
-          ip: '185.142.53.12',
-          country: 'Russia',
-          city: 'Moscow',
-          time: '2024-01-15 14:23:45',
-          type: 'SSH Brute Force',
-          port: 22,
-          commands: ['root:password123', 'admin:admin', 'user:123456'],
-          vt_score: '3/60 malicious'
-        }
-      };
-
-      var session = details[id] || {
-        ip: 'Unknown',
-        country: 'Unknown',
-        city: 'Unknown',
-        time: 'Unknown',
-        type: 'Unknown',
-        port: 'Unknown',
-        commands: [],
-        vt_score: 'Unknown'
-      };
-
-      var html = `
-        <div class="row">
-            <div class="col-md-6">
-                <table class="table table-sm">
-                    <tr><th>Source IP:</th><td>${session.ip}</td></tr>
-                    <tr><th>Location:</th><td>${session.city}, ${session.country}</td></tr>
-                    <tr><th>Timestamp:</th><td>${session.time}</td></tr>
-                </table>
-            </div>
-            <div class="col-md-6">
-                <table class="table table-sm">
-                    <tr><th>Attack Type:</th><td>${session.type}</td></tr>
-                    <tr><th>Target Port:</th><td>${session.port}</td></tr>
-                    <tr><th>VT Score:</th><td>${session.vt_score}</td></tr>
-                </table>
-            </div>
-        </div>
-        <h6>Commands Attempted:</h6>
-        <ul class="list-group">
-    `;
-
-      if (session.commands.length > 0) {
-        session.commands.forEach(function (cmd) {
-          html += `<li class="list-group-item"><code>${cmd}</code></li>`;
-        });
-      } else {
-        html += `<li class="list-group-item">No commands recorded</li>`;
-      }
-
-      html += `</ul>`;
-
-      $('#sessionDetails').html(html);
-      $('#sessionModal').modal('show');
     }
+
+    async function loadMapData() {
+      const d = await apiFetch('/api/dashboard/map');
+      // Clear old markers
+      Object.values(mapMarkersByCountry).forEach(m => m.remove());
+      mapMarkersByCountry = {};
+      d.markers.forEach(function (loc) {
+        var circle = L.circleMarker([loc.lat, loc.lng], {
+          radius: Math.max(5, Math.sqrt(loc.count) * 1.5),
+          color: '#dc3545', fillColor: '#f03', fillOpacity: 0.5, weight: 1
+        }).addTo(map);
+        circle.bindPopup('<b>' + loc.country + '</b><br>Attacks: ' + loc.count);
+        mapMarkersByCountry[loc.country] = circle;
+      });
+    }
+
+    function handleEnrichmentUpdate(data) {
+      // Update country cells in the table for this IP
+      $('tr[data-ip="' + data.src_ip + '"] .country-cell').text(data.country || '-');
+      // Add new map marker if we have coords and it's not already there
+      if (data.lat && data.lng && data.country && !mapMarkersByCountry[data.country]) {
+        var circle = L.circleMarker([data.lat, data.lng], {
+          radius: 5, color: '#dc3545', fillColor: '#f03', fillOpacity: 0.5, weight: 1
+        }).addTo(map);
+        circle.bindPopup('<b>' + data.country + '</b>');
+        mapMarkersByCountry[data.country] = circle;
+      }
+    }
+
+    // ==================== CHARTS ====================
+    var timelineChart, typesChart;
+
+    function initCharts() {
+      var ctx = document.getElementById('timelineChart').getContext('2d');
+      timelineChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Attacks', data: [],
+          borderColor: 'rgb(23,162,184)', backgroundColor: 'rgba(23,162,184,0.1)',
+          tension: 0.4, fill: true }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+
+      var pieCtx = document.getElementById('typesChart').getContext('2d');
+      typesChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [],
+          backgroundColor: ['#dc3545','#ffc107','#28a745','#17a2b8','#6c757d'], borderWidth: 1 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+    async function loadTimelineData(range) {
+      const d = await apiFetch('/api/dashboard/timeline?range=' + range);
+      timelineChart.data.labels = d.labels;
+      timelineChart.data.datasets[0].data = d.data;
+      timelineChart.update();
+    }
+
+    async function loadAttackTypes() {
+      const d = await apiFetch('/api/dashboard/attack-types');
+      typesChart.data.labels = d.labels;
+      typesChart.data.datasets[0].data = d.data;
+      typesChart.update();
+    }
+
+    // ==================== ATTACKS TABLE ====================
+    async function loadRecentEvents() {
+      const d = await apiFetch('/api/events?limit=15&offset=0');
+      const tbody = document.getElementById('attacksTableBody');
+      if (d.items && d.items.length > 0) {
+        tbody.innerHTML = d.items.map(buildEventRow).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No attacks recorded yet.</td></tr>';
+      }
+    }
+
+    function buildEventRow(ev) {
+      const sev = ev.severity || 'low';
+      const ts  = ev.timestamp ? new Date(ev.timestamp).toLocaleString() : '-';
+      const country = ev.country || '<span class="text-muted">-</span>';
+      return `<tr data-ip="${ev.src_ip}">
+        <td>${ts}</td>
+        <td><code>${ev.src_ip}</code></td>
+        <td class="country-cell">${country}</td>
+        <td>${ev.attack_type || ev.event_id || '-'}</td>
+        <td>${ev.dst_port || '-'}</td>
+        <td><span class="badge badge-${sev}">${sev.charAt(0).toUpperCase()+sev.slice(1)}</span></td>
+        <td><button class="btn btn-xs btn-info" onclick="viewDetails(${ev.id})"><i class="fas fa-eye"></i></button></td>
+      </tr>`;
+    }
+
+    function handleNewEvent(ev) {
+      const tbody = document.getElementById('attacksTableBody');
+      // Remove "connecting" placeholder
+      const placeholder = document.getElementById('noDataRow');
+      if (placeholder) placeholder.remove();
+
+      // Prepend new row
+      tbody.insertAdjacentHTML('afterbegin', buildEventRow(ev));
+
+      // Keep max 50 rows
+      while (tbody.rows.length > 50) tbody.deleteRow(tbody.rows.length - 1);
+
+      // Flash live indicator
+      const dot = document.querySelector('.live-indicator');
+      if (dot) {
+        dot.style.backgroundColor = '#dc3545';
+        setTimeout(() => { dot.style.backgroundColor = '#28a745'; }, 400);
+      }
+
+      // Toast for high severity
+      if (ev.severity === 'high') {
+        $('#alertCount').text(parseInt($('#alertCount').text() || 0) + 1);
+      }
+    }
+
+    // ==================== EVENT DETAIL MODAL ====================
+    async function viewDetails(id) {
+      $('#sessionDetails').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i></div>');
+      $('#sessionModal').modal('show');
+      try {
+        const ev = await apiFetch('/api/events/' + id);
+        const loc = [ev.city, ev.country].filter(Boolean).join(', ') || 'Unknown';
+        const vtScore = ev.vt_malicious != null ? ev.vt_malicious + '/' + (ev.vt_total || '?') + ' malicious' : 'Not checked';
+        let html = `
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table table-sm">
+                <tr><th>Source IP</th><td><code>${ev.src_ip}</code></td></tr>
+                <tr><th>Location</th><td>${loc}</td></tr>
+                <tr><th>ISP</th><td>${ev.isp || '-'}</td></tr>
+                <tr><th>Timestamp</th><td>${ev.timestamp ? new Date(ev.timestamp).toLocaleString() : '-'}</td></tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table table-sm">
+                <tr><th>Attack Type</th><td>${ev.attack_type || '-'}</td></tr>
+                <tr><th>Target Port</th><td>${ev.dst_port || '-'}</td></tr>
+                <tr><th>Severity</th><td><span class="badge badge-${ev.severity}">${ev.severity}</span></td></tr>
+                <tr><th>VirusTotal</th><td>${vtScore}</td></tr>
+              </table>
+            </div>
+          </div>`;
+        if (ev.username) html += `<p><strong>Credentials tried:</strong> <code>${ev.username} / ${ev.password || ''}</code></p>`;
+        if (ev.command_input) html += `<p><strong>Command:</strong> <pre class="bg-dark text-white p-2 rounded">${ev.command_input}</pre></p>`;
+        if (ev.download_url) html += `<p><strong>Download URL:</strong> <code>${ev.download_url}</code></p>`;
+        if (ev.raw_json) html += `<details><summary class="text-muted" style="cursor:pointer">Raw JSON</summary><pre class="bg-light p-2 mt-1" style="font-size:11px;max-height:150px;overflow:auto">${ev.raw_json}</pre></details>`;
+        $('#sessionDetails').html(html);
+      } catch (e) {
+        $('#sessionDetails').html('<div class="alert alert-danger">Failed to load event details.</div>');
+      }
+    }
+
+    // ==================== INIT ====================
+    $(document).ready(function () {
+      initMap();
+      initCharts();
+      connectWebSocket();
+
+      // Load initial data
+      apiFetch('/api/dashboard/stats').then(updateStatsBoxes);
+      loadTimelineData($('#timeRange').val());
+      loadAttackTypes();
+      loadMapData();
+      loadRecentEvents();
+
+      // Time range change
+      $('#timeRange').change(function () { loadTimelineData($(this).val()); });
+
+      // Refresh map button
+      $('#refreshMap').click(function () {
+        const icon = $(this).find('i');
+        icon.addClass('fa-spin');
+        loadMapData().finally(() => icon.removeClass('fa-spin'));
+      });
+
+      // Logout link (add to navbar if needed)
+      $('#logoutBtn').click(function () {
+        localStorage.removeItem('hd_token');
+        window.location.href = 'login.html';
+      });
+    });
   </script>
 
 </body>

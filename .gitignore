@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+env/
+
+# Database files (SQLite — we use PostgreSQL in Docker)
+*.db
+*.db-shm
+*.db-wal
+
+# Cowrie log file (written at runtime, not tracked in git)
+cowrie.json
+backend/cowrie.json
+
+# Environment — never commit secrets
+backend/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

