@@ -1,0 +1,109 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL database ──────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: honeydash-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: honeydash
+      POSTGRES_USER: honeydash
+      POSTGRES_PASSWORD: honeydash_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - honeydash-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U honeydash"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── pgAdmin — visual database browser (http://localhost:5050) ────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: honeydash-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@honeydash.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - honeydash-net
+
+  # ── Cowrie SSH honeypot ──────────────────────────────────────────────────────
+  cowrie:
+    image: cowrie/cowrie:latest
+    container_name: honeydash-cowrie
+    restart: unless-stopped
+    ports:
+      - "2222:2222"   # SSH honeypot port (forward your router port 22 → 2222 for real attacks)
+    volumes:
+      - cowrie_logs:/cowrie/var/log/cowrie
+    networks:
+      - honeydash-net
+
+  # ── HoneyDash backend (FastAPI) ──────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: honeydash-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - cowrie_logs:/var/log/cowrie
+    env_file:
+      - ./backend/.env
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      cowrie:
+        condition: service_started
+    networks:
+      - honeydash-net
+
+  # ── Frontend (nginx serving static HTML) ─────────────────────────────────────
+  frontend:
+    image: nginx:alpine
+    container_name: honeydash-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - honeydash-net
+
+  # ── Mock Cowrie generator (only with: docker compose --profile dev up) ────────
+  mock-cowrie:
+    build:
+      context: ./mock_cowrie
+      dockerfile: Dockerfile
+    container_name: honeydash-mock-cowrie
+    volumes:
+      - cowrie_logs:/var/log/cowrie
+    environment:
+      - LOG_PATH=/var/log/cowrie/cowrie.json
+      - EVENTS_PER_SECOND=0.5
+    profiles:
+      - dev
+    networks:
+      - honeydash-net
+
+volumes:
+  postgres_data:
+  cowrie_logs:
+
+networks:
+  honeydash-net:
+    driver: bridge
