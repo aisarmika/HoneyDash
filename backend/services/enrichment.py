@@ -95,7 +95,8 @@ def _compute_severity_from_vt(vt_malicious: int | None) -> str | None:
 
 
 async def _enrich_ip(ip: str):
-    cache_cutoff = datetime.now(timezone.utc) - timedelta(hours=settings.enrichment_cache_hours)
+    # naive UTC cutoff — stored timestamps are also naive
+    cache_cutoff = datetime.utcnow() - timedelta(hours=settings.enrichment_cache_hours)
 
     async with AsyncSessionLocal() as db:
         result = await db.execute(
@@ -107,7 +108,7 @@ async def _enrich_ip(ip: str):
             row
             and row.enrichment_status == "complete"
             and row.enriched_at
-            and row.enriched_at.replace(tzinfo=timezone.utc) > cache_cutoff
+            and row.enriched_at > cache_cutoff
         ):
             return  # cache hit
 
@@ -159,7 +160,7 @@ async def _enrich_ip(ip: str):
         vt_total = sum(stats.values()) if stats else None
         vt_reputation = vt_data.get("data", {}).get("attributes", {}).get("reputation")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()  # naive UTC — matches TIMESTAMP WITHOUT TIME ZONE columns
     async with AsyncSessionLocal() as db:
         stmt = pg_insert(IPEnrichment).values(
             ip_address=ip,

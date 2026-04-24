@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "HoneyDash Frontend (nginx)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "frontend"],
+      "port": 3000
+    },
+    {
+      "name": "HoneyDash Backend (FastAPI)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "backend"],
+      "port": 8000
+    },
+    {
+      "name": "Full Stack + Mock Data (dev profile)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "--profile", "dev", "up"],
+      "port": 3000
+    },
+    {
+      "name": "PostgreSQL",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "postgres"],
+      "port": 5432
+    },
+    {
+      "name": "pgAdmin",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "pgadmin"],
+      "port": 5051
+    }
+  ]
+}

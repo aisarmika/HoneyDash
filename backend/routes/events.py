@@ -20,6 +20,8 @@ def _event_to_dict(ev: Event, enrich: IPEnrichment | None) -> dict:
         "src_port": ev.src_port,
         "dst_port": ev.dst_port,
         "timestamp": ev.timestamp.isoformat() + "Z" if ev.timestamp else None,
+        "sensor": ev.sensor,
+        "protocol": ev.protocol,
         "username": ev.username,
         "password": ev.password,
         "command_input": ev.command_input,
@@ -43,6 +45,7 @@ async def list_events(
     offset: int = Query(0, ge=0),
     severity: str = Query(""),
     src_ip: str = Query(""),
+    sensor: str = Query(""),
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ):
@@ -53,12 +56,20 @@ async def list_events(
         q = q.where(Event.severity == severity)
     if src_ip:
         q = q.where(Event.src_ip == src_ip)
+    if sensor:
+        q = q.where(Event.sensor == sensor)
+
+    filters = []
+    if severity:
+        filters.append(Event.severity == severity)
+    if src_ip:
+        filters.append(Event.src_ip == src_ip)
+    if sensor:
+        filters.append(Event.sensor == sensor)
 
     total = await db.scalar(
-        select(func.count(Event.id)).where(
-            *(([Event.severity == severity] if severity else []) +
-              ([Event.src_ip == src_ip] if src_ip else []))
-        )
+        select(func.count(Event.id)).where(*filters) if filters
+        else select(func.count(Event.id))
     )
 
     q = q.order_by(Event.timestamp.desc()).limit(limit).offset(offset)
@@ -67,6 +78,40 @@ async def list_events(
 
     items = [_event_to_dict(ev, enrich) for ev, enrich in rows]
     return {"total": total or 0, "limit": limit, "offset": offset, "items": items}
+
+
+@router.get("/search")
+async def search_events(
+    q: str = Query(..., min_length=1, max_length=200),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Full-text search across src_ip, username, command_input, attack_type, download_url."""
+    term = f"%{q}%"
+    from sqlalchemy import or_
+    q_stmt = (
+        select(Event, IPEnrichment)
+        .outerjoin(IPEnrichment, IPEnrichment.ip_address == Event.src_ip)
+        .where(
+            or_(
+                Event.src_ip.ilike(term),
+                Event.username.ilike(term),
+                Event.command_input.ilike(term),
+                Event.attack_type.ilike(term),
+                Event.download_url.ilike(term),
+            )
+        )
+        .order_by(Event.timestamp.desc())
+        .limit(limit)
+    )
+    result = await db.execute(q_stmt)
+    rows = result.fetchall()
+    return {
+        "query": q,
+        "total": len(rows),
+        "items": [_event_to_dict(ev, enrich) for ev, enrich in rows],
+    }
 
 
 @router.get("/{event_id}")

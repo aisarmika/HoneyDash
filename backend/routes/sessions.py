@@ -51,6 +51,9 @@ def _session_to_dict(sess: Session, enrich: IPEnrichment | None) -> dict:
         "vt_total": enrich.vt_total if enrich else None,
         "vt_reputation": enrich.vt_reputation if enrich else None,
         "enrichment_status": enrich.enrichment_status if enrich else "pending",
+        "protocol": sess.protocol,
+        "is_anomaly": sess.is_anomaly,
+        "anomaly_score": sess.anomaly_score,
     }
 
 
@@ -60,9 +63,13 @@ async def list_sessions(
     offset: int = Query(0, ge=0),
     severity: str = Query(""),
     attack_type: str = Query(""),
+    src_ip: str = Query(""),
+    start: str = Query(""),   # ISO date string e.g. 2025-01-01
+    end: str = Query(""),     # ISO date string e.g. 2025-12-31
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ):
+    from datetime import datetime as _dt
     q = select(Session, IPEnrichment).outerjoin(
         IPEnrichment, IPEnrichment.ip_address == Session.src_ip
     )
@@ -71,6 +78,18 @@ async def list_sessions(
         filters.append(Session.severity == severity)
     if attack_type:
         filters.append(Session.attack_type == attack_type)
+    if src_ip:
+        filters.append(Session.src_ip.ilike(f"%{src_ip}%"))
+    if start:
+        try:
+            filters.append(Session.start_time >= _dt.fromisoformat(start))
+        except ValueError:
+            pass
+    if end:
+        try:
+            filters.append(Session.start_time <= _dt.fromisoformat(end + "T23:59:59"))
+        except ValueError:
+            pass
     if filters:
         q = q.where(*filters)
 

@@ -1,0 +1,14 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "HoneyDash PostgreSQL",
+            "Group": "Servers",
+            "Host": "postgres",
+            "Port": 5432,
+            "MaintenanceDB": "honeydash",
+            "Username": "honeydash",
+            "Password": "honeydash_pass",
+            "SSLMode": "prefer"
+        }
+    }
+}

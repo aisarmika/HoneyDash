@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     log_catchup_on_start: bool = False
     vt_rate_limit_seconds: float = 15.0
     enrichment_cache_hours: int = 24
+    sensor_api_key: str = "honeydash-sensor-key-change-me"
 
     model_config = {"env_file": str(_HERE / ".env")}
 
