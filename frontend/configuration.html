@@ -5,556 +5,787 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>HoneyDash | Configuration</title>
-
-    <!-- Google Font: Source Sans Pro -->
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
-    <!-- Theme style -->
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="dist/css/dark-theme.css">
+    <link rel="stylesheet" href="enterprise.css">
+    <style>
+        .status-badge { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 4px; }
+        .test-result-box { display:none; margin-top:10px; padding:10px 14px; border-radius:6px; font-size:13px; }
+        .test-result-box.success { background:rgba(63,185,80,0.12); color:var(--hd-green3); border:1px solid var(--hd-green); }
+        .test-result-box.danger  { background:rgba(248,81,73,0.12); color:var(--hd-red3);   border:1px solid var(--hd-red2); }
+        .upload-result { display:none; margin-top:14px; }
+        .stat-card { text-align:center; padding:12px; border-radius:6px; background:var(--hd-surface2); border:1px solid var(--hd-border); }
+        .stat-card .stat-val { font-size:22px; font-weight:700; color:var(--hd-text); }
+        .stat-card .stat-lbl { font-size:11px; color:var(--hd-text3); text-transform:uppercase; letter-spacing:.05em; }
+    </style>
 </head>
 
 <body class="hold-transition sidebar-mini">
-    <div class="wrapper">
+<div class="wrapper">
 
-        <!-- Navbar -->
-        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
-                </li>
-            </ul>
-        </nav>
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand navbar-dark">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
+            </li>
+            <li class="nav-item d-none d-sm-inline-block">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="fullscreen" href="#" role="button"><i class="fas fa-expand-arrows-alt"></i></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i></a>
+            </li>
+        </ul>
+    </nav>
 
-        <!-- Sidebar with Configuration active -->
-        <aside class="main-sidebar sidebar-dark-primary elevation-4">
-            <a href="dashboard.html" class="brand-link">
-                <img src="dist/img/AdminLTELogo.png" alt="Logo" class="brand-image img-circle elevation-3">
-                <span class="brand-text font-weight-light">HoneyDash</span>
-            </a>
-            <div class="sidebar">
-                <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-                    <div class="image">
-                        <img src="dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User">
-                    </div>
-                    <div class="info">
-                        <a href="#" class="d-block">Security Analyst</a>
-                    </div>
-                </div>
-                <nav class="mt-2">
-                    <ul class="nav nav-pills nav-sidebar flex-column">
-                        <li class="nav-item">
-                            <a href="dashboard.html" class="nav-link">
-                                <i class="nav-icon fas fa-tachometer-alt"></i>
-                                <p>Dashboard</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="sessions.html" class="nav-link">
-                                <i class="nav-icon fas fa-list"></i>
-                                <p>Attack Sessions</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="alerts.html" class="nav-link">
-                                <i class="nav-icon fas fa-exclamation-triangle"></i>
-                                <p>Alerts</p>
-                                <span class="badge badge-info right">8</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="reports.html" class="nav-link">
-                                <i class="nav-icon fas fa-chart-bar"></i>
-                                <p>Reports</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="configuration.html" class="nav-link active">
-                                <i class="nav-icon fas fa-cog"></i>
-                                <p>Configuration</p>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </aside>
-
-        <!-- Content Wrapper -->
-        <div class="content-wrapper">
-            <div class="content-header">
-                <div class="container-fluid">
-                    <div class="row mb-2">
-                        <div class="col-sm-6">
-                            <h1 class="m-0">System Configuration</h1>
+    <!-- Sidebar -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="dashboard.html" class="brand-link">
+            <img src="dist/img/AdminLTELogo.png" alt="Logo" class="brand-image img-circle elevation-3">
+            <span class="brand-text font-weight-light">HoneyDash</span>
+        </a>
+        <div class="sidebar">
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                <div class="image"><img src="dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User"></div>
+                <div class="info dropdown">
+                    <a href="#" class="d-block dropdown-toggle" data-toggle="dropdown">
+                        <span id="sidebarUsername">Analyst</span>
+                    </a>
+                    <div class="dropdown-menu border-0 shadow-lg" style="background:#2d3748;min-width:190px;margin-top:4px">
+                        <div class="px-3 py-2">
+                            <div class="text-white-50 small">Logged in as</div>
+                            <div class="text-white font-weight-bold text-truncate" id="sidebarFullEmail" style="max-width:155px">—</div>
+                            <span id="sidebarRoleBadge" class="badge badge-danger mt-1">admin</span>
                         </div>
-                        <div class="col-sm-6">
-                            <ol class="breadcrumb float-sm-right">
-                                <li class="breadcrumb-item"><a href="dashboard.html">Home</a></li>
-                                <li class="breadcrumb-item active">Configuration</li>
-                            </ol>
-                        </div>
+                        <div class="dropdown-divider" style="border-color:#4a5568;margin:2px 0"></div>
+                        <a class="dropdown-item" href="users.html" id="userMgmtLink" style="display:none;color:#e2e8f0"><i class="fas fa-users-cog mr-2 text-muted"></i>User Management</a>
+                        <div class="dropdown-divider" style="border-color:#4a5568;margin:2px 0"></div>
+                        <a class="dropdown-item" href="#" onclick="logout()" style="color:#fc8181"><i class="fas fa-sign-out-alt mr-2"></i>Sign out</a>
                     </div>
                 </div>
             </div>
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p></a></li>
+                    <li class="nav-item"><a href="sessions.html" class="nav-link"><i class="nav-icon fas fa-list"></i><p>Attack Sessions</p></a></li>
+                    <li class="nav-item"><a href="alerts.html" class="nav-link"><i class="nav-icon fas fa-exclamation-triangle"></i><p>Alerts</p></a></li>
+                    <li class="nav-item"><a href="globe.html" class="nav-link"><i class="nav-icon fas fa-globe-asia" style="color:#00c8ff"></i><p style="color:#00c8ff">3D Attack Globe</p></a></li>
+                    <li class="nav-item"><a href="reports.html" class="nav-link"><i class="nav-icon fas fa-chart-bar"></i><p>Reports</p></a></li>
+                    <li class="nav-item"><a href="configuration.html" class="nav-link active"><i class="nav-icon fas fa-cog"></i><p>Configuration</p></a></li>
+                    <li class="nav-item" id="usersNavItem" style="display:none"><a href="users.html" class="nav-link"><i class="nav-icon fas fa-users"></i><p>Users</p></a></li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
 
-            <section class="content">
-                <div class="container-fluid">
-                    <!-- Honeypot Connection Settings (HD_UC_03) -->
-                    <div class="card card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">Honeypot Connections</h3>
-                            <div class="card-tools">
-                                <span class="badge badge-success">Connected</span>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Honeypot Type</label>
-                                        <select class="form-control">
-                                            <option>Cowrie (SSH/Telnet)</option>
-                                            <option>Dionaea (Services)</option>
-                                            <option>Glastopf (Web)</option>
-                                            <option>Conpot (ICS/SCADA)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Connection Mode</label>
-                                        <select class="form-control">
-                                            <option>Live Connection</option>
-                                            <option>Log File Upload</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Live Connection Settings -->
-                            <div id="liveConnection">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Host/IP</label>
-                                            <input type="text" class="form-control" value="192.168.1.100">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label>Port</label>
-                                            <input type="text" class="form-control" value="2222">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label>Protocol</label>
-                                            <select class="form-control">
-                                                <option>TCP</option>
-                                                <option>UDP</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Username (Optional)</label>
-                                            <input type="text" class="form-control" placeholder="username">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Password (Optional)</label>
-                                            <input type="password" class="form-control" placeholder="••••••••">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- File Upload Section -->
-                            <div id="fileUpload" style="display: none;">
-                                <div class="form-group">
-                                    <label>Upload Log File</label>
-                                    <input type="file" class="form-control-file">
-                                    <small class="text-muted">Supported formats: .log, .json, .txt</small>
-                                </div>
-                            </div>
-
-                            <button class="btn btn-success" onclick="testConnection()">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
-                            <button class="btn btn-primary" onclick="saveConnection()">
-                                <i class="fas fa-save"></i> Save Connection
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Alert Configuration (HD_UC_11) -->
-                    <div class="card card-warning">
-                        <div class="card-header">
-                            <h3 class="card-title">Alert Rules</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label>Rule Name</label>
-                                        <input type="text" class="form-control" value="SSH Brute Force Detection">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Condition</label>
-                                        <select class="form-control">
-                                            <option>Failed Logins > Threshold</option>
-                                            <option>Unique IPs > Threshold</option>
-                                            <option>Requests per Minute</option>
-                                            <option>Anomaly Score</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Threshold</label>
-                                        <input type="number" class="form-control" value="10">
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Severity</label>
-                                        <select class="form-control">
-                                            <option>High</option>
-                                            <option>Medium</option>
-                                            <option>Low</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-1">
-                                    <div class="form-group">
-                                        <label>&nbsp;</label>
-                                        <button class="btn btn-success btn-block" onclick="addRule()">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <table class="table table-bordered mt-3">
-                                <thead>
-                                    <tr>
-                                        <th>Rule Name</th>
-                                        <th>Condition</th>
-                                        <th>Threshold</th>
-                                        <th>Severity</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>SSH Brute Force</td>
-                                        <td>Failed Logins</td>
-                                        <td>10 in 5min</td>
-                                        <td><span class="badge badge-high">High</span></td>
-                                        <td><span class="badge badge-success">Active</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-warning"><i class="fas fa-edit"></i></button>
-                                            <button class="btn btn-xs btn-danger"><i class="fas fa-trash"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Port Scan Detection</td>
-                                        <td>Unique Ports</td>
-                                        <td>20 in 1min</td>
-                                        <td><span class="badge badge-medium">Medium</span></td>
-                                        <td><span class="badge badge-success">Active</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-warning"><i class="fas fa-edit"></i></button>
-                                            <button class="btn btn-xs btn-danger"><i class="fas fa-trash"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Malware Download</td>
-                                        <td>File Download</td>
-                                        <td>Any</td>
-                                        <td><span class="badge badge-high">High</span></td>
-                                        <td><span class="badge badge-success">Active</span></td>
-                                        <td>
-                                            <button class="btn btn-xs btn-warning"><i class="fas fa-edit"></i></button>
-                                            <button class="btn btn-xs btn-danger"><i class="fas fa-trash"></i></button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- API Integration (HD_UC_09, HD_UC_10) -->
-                    <div class="card card-info">
-                        <div class="card-header">
-                            <h3 class="card-title">API Integrations</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card">
-                                        <div class="card-header bg-success">
-                                            <h5 class="card-title">GeoIP (MaxMind)</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="form-group">
-                                                <label>License Key</label>
-                                                <input type="password" class="form-control" value="••••••••••••••••">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Database Version</label>
-                                                <select class="form-control">
-                                                    <option>GeoLite2 City (Free)</option>
-                                                    <option>GeoIP2 City (Paid)</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" checked>
-                                                <label class="form-check-label">Auto-update database</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card">
-                                        <div class="card-header bg-warning">
-                                            <h5 class="card-title">VirusTotal</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="form-group">
-                                                <label>API Key</label>
-                                                <input type="password" class="form-control" value="••••••••••••••••">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Rate Limit</label>
-                                                <select class="form-control">
-                                                    <option>Public API (4/min)</option>
-                                                    <option>Premium API</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" checked>
-                                                <label class="form-check-label">Check file hashes</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <button class="btn btn-primary" onclick="saveAPIs()">
-                                <i class="fas fa-save"></i> Save API Settings
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Data Retention (HD_UC_15) -->
-                    <div class="card card-danger">
-                        <div class="card-header">
-                            <h3 class="card-title">Data Retention</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label>Raw Logs</label>
-                                        <select class="form-control">
-                                            <option>30 days</option>
-                                            <option selected>60 days</option>
-                                            <option>90 days</option>
-                                            <option>180 days</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label>Enriched Data</label>
-                                        <select class="form-control">
-                                            <option>60 days</option>
-                                            <option selected>90 days</option>
-                                            <option>180 days</option>
-                                            <option>365 days</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label>Alerts</label>
-                                        <select class="form-control">
-                                            <option>30 days</option>
-                                            <option>60 days</option>
-                                            <option selected>90 days</option>
-                                            <option>Forever</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Storage Location</label>
-                                        <input type="text" class="form-control" value="/var/lib/honeydash/data">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Max Storage</label>
-                                        <input type="text" class="form-control" value="100 GB">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Current Usage</label>
-                                        <div class="progress mt-2">
-                                            <div class="progress-bar bg-success" style="width: 45%">45%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <button class="btn btn-danger" onclick="archiveNow()">
-                                <i class="fas fa-archive"></i> Archive Now
-                            </button>
-                            <button class="btn btn-warning" onclick="purgeNow()">
-                                <i class="fas fa-trash"></i> Purge Old Data
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- System Settings -->
-                    <div class="card card-secondary">
-                        <div class="card-header">
-                            <h3 class="card-title">System Settings</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Dashboard Refresh Rate</label>
-                                        <select class="form-control">
-                                            <option>5 seconds</option>
-                                            <option selected>10 seconds</option>
-                                            <option>30 seconds</option>
-                                            <option>1 minute</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Timezone</label>
-                                        <select class="form-control">
-                                            <option>UTC</option>
-                                            <option selected>Asia/Kuala_Lumpur</option>
-                                            <option>America/New_York</option>
-                                            <option>Europe/London</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Date Format</label>
-                                        <select class="form-control">
-                                            <option>YYYY-MM-DD</option>
-                                            <option>DD/MM/YYYY</option>
-                                            <option>MM/DD/YYYY</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Language</label>
-                                        <select class="form-control">
-                                            <option>English</option>
-                                            <option>Bahasa Malaysia</option>
-                                            <option>中文</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Save All Button -->
-                    <div class="row">
-                        <div class="col-12">
-                            <button class="btn btn-primary btn-lg float-right" onclick="saveAllConfig()">
-                                <i class="fas fa-save"></i> Save All Configuration
-                            </button>
-                            <button class="btn btn-secondary btn-lg float-right mr-2" onclick="resetConfig()">
-                                <i class="fas fa-undo"></i> Reset
-                            </button>
-                        </div>
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6"><h1 class="m-0">Configuration</h1></div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="dashboard.html">Home</a></li>
+                            <li class="breadcrumb-item active">Configuration</li>
+                        </ol>
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
 
-        <footer class="main-footer">
-            <strong>HoneyDash v1.0 - Real-Time Honeypot Visualization & Alerting</strong>
-        </footer>
+        <section class="content">
+          <div class="container-fluid">
+          <style>
+            .cfg-section { border:1px solid var(--hd-border2); border-radius:6px; margin-bottom:8px; overflow:hidden; }
+            .cfg-header {
+              display:flex; align-items:center; gap:12px;
+              padding:11px 16px; cursor:pointer; user-select:none;
+              background:var(--hd-surface2); transition:background 0.15s;
+            }
+            .cfg-header:hover { background:var(--hd-surface3); }
+            .cfg-header.open  { border-bottom:1px solid var(--hd-border2); }
+            .cfg-icon  { width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+            .cfg-title { font-size:13px; font-weight:600; color:var(--hd-text); flex:1; margin:0; }
+            .cfg-sub   { font-size:11px; color:var(--hd-text3); }
+            .cfg-tag   { font-size:10px; padding:2px 7px; border-radius:3px; font-weight:600; white-space:nowrap; }
+            .cfg-chevron { color:var(--hd-text3); transition:transform 0.2s; font-size:11px; flex-shrink:0; }
+            .cfg-header.open .cfg-chevron { transform:rotate(180deg); }
+            .cfg-body  { display:none; padding:18px 18px 14px; background:var(--hd-surface); }
+            .cfg-body.open { display:block; }
+            .cfg-divider { border-top:1px solid var(--hd-border); margin:14px 0; }
+          </style>
+
+          <!-- ① Honeypot Connection -->
+          <div class="cfg-section">
+            <div class="cfg-header open" onclick="toggleCfg(this)">
+              <div class="cfg-icon" style="background:rgba(56,139,253,0.15);color:var(--hd-blue2)"><i class="fas fa-plug"></i></div>
+              <div><div class="cfg-title">Honeypot Connection</div><div class="cfg-sub">Sensor type, host, port &amp; connection mode</div></div>
+              <span id="connBadge" class="cfg-tag" style="background:rgba(255,255,255,0.07);color:var(--hd-text3)">Not Tested</span>
+              <i class="fas fa-chevron-down cfg-chevron"></i>
+            </div>
+            <div class="cfg-body open">
+              <div class="row">
+                <div class="col-md-4"><div class="form-group"><label>Honeypot Type</label>
+                  <select id="cfgType" class="form-control"><option value="cowrie">Cowrie (SSH/Telnet)</option><option value="dionaea">Dionaea (Services)</option><option value="glastopf">Glastopf (Web)</option><option value="conpot">Conpot (ICS/SCADA)</option></select>
+                </div></div>
+                <div class="col-md-4"><div class="form-group"><label>Connection Mode</label>
+                  <select id="cfgMode" class="form-control" onchange="toggleMode()"><option value="live">Live Connection</option><option value="upload">Log File Upload</option></select>
+                </div></div>
+                <div class="col-md-4"><div class="form-group"><label>Sensor Name</label>
+                  <input type="text" id="cfgSensor" class="form-control" placeholder="honeypot-01">
+                </div></div>
+              </div>
+              <div id="liveFields">
+                <div class="row">
+                  <div class="col-md-6"><div class="form-group"><label>Host / IP</label><input type="text" id="cfgHost" class="form-control" placeholder="192.168.1.100"></div></div>
+                  <div class="col-md-3"><div class="form-group"><label>Port</label><input type="number" id="cfgPort" class="form-control" value="2222"></div></div>
+                  <div class="col-md-3"><div class="form-group"><label>Protocol</label><select id="cfgProtocol" class="form-control"><option value="TCP">TCP</option><option value="UDP">UDP</option></select></div></div>
+                </div>
+                <div class="row"><div class="col-md-8"><div class="form-group"><label>Log File Path (on sensor)</label><input type="text" id="cfgLogPath" class="form-control" placeholder="/var/log/cowrie/cowrie.json"></div></div></div>
+              </div>
+              <div class="form-group"><label>Notes <small class="text-muted">(optional)</small></label><textarea id="cfgNotes" class="form-control" rows="2" placeholder="Deployment notes…"></textarea></div>
+              <div id="testResult" class="test-result-box"></div>
+              <div class="mt-2">
+                <button class="btn btn-sm btn-outline-success mr-2" onclick="testConnection()"><i class="fas fa-plug mr-1"></i>Test Connection</button>
+                <button class="btn btn-sm btn-primary" onclick="saveConnection()"><i class="fas fa-save mr-1"></i>Save</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ② Import Log File -->
+          <div class="cfg-section">
+            <div class="cfg-header" onclick="toggleCfg(this)">
+              <div class="cfg-icon" style="background:rgba(57,211,187,0.12);color:var(--hd-teal3)"><i class="fas fa-file-import"></i></div>
+              <div><div class="cfg-title">Import Log File</div><div class="cfg-sub">Upload a Cowrie JSON log to ingest historical events</div></div>
+              <span class="cfg-tag" style="background:rgba(57,211,187,0.1);color:var(--hd-teal3)">Cowrie JSON · max 50 MB</span>
+              <i class="fas fa-chevron-down cfg-chevron"></i>
+            </div>
+            <div class="cfg-body">
+              <div class="row align-items-end">
+                <div class="col-md-8"><div class="form-group mb-0"><label>Select Log File</label>
+                  <div class="input-group"><div class="custom-file">
+                    <input type="file" class="custom-file-input" id="logFile" accept=".json,.log,.txt" onchange="document.getElementById('logFileName').textContent=this.files[0]?.name||'Choose file'">
+                    <label class="custom-file-label" id="logFileName">Choose file</label>
+                  </div></div>
+                  <small class="text-muted">Cowrie cowrie.json format — one event per line</small>
+                </div></div>
+                <div class="col-md-4"><button class="btn btn-info btn-block" onclick="uploadLogFile()" id="uploadBtn"><i class="fas fa-file-import mr-1"></i>Import Events</button></div>
+              </div>
+              <div id="uploadProgress" style="display:none;margin-top:14px">
+                <div class="progress" style="height:6px"><div class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width:100%"></div></div>
+                <p class="text-muted mt-1 mb-0" style="font-size:12px">Uploading and processing events…</p>
+              </div>
+              <div class="upload-result" id="uploadResult">
+                <hr><h6 id="uploadMessage" class="text-success"></h6>
+                <div class="row mt-2" id="uploadStats"></div>
+                <div id="uploadErrors" style="display:none;margin-top:10px"><strong class="text-danger">Sample errors:</strong><ul id="uploadErrorList" class="text-danger small mt-1"></ul></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ③ Alert Rules -->
+          <div class="cfg-section">
+            <div class="cfg-header" onclick="toggleCfg(this)">
+              <div class="cfg-icon" style="background:rgba(240,136,62,0.15);color:var(--hd-amber3)"><i class="fas fa-bell"></i></div>
+              <div><div class="cfg-title">Alert Rules</div><div class="cfg-sub">Define conditions that trigger notifications</div></div>
+              <i class="fas fa-chevron-down cfg-chevron"></i>
+            </div>
+            <div class="cfg-body">
+              <div class="row">
+                <div class="col-md-4"><div class="form-group"><label>Rule Name</label><input type="text" id="rName" class="form-control" placeholder="SSH Brute Force Detection"></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Condition</label>
+                  <select id="rCondition" class="form-control">
+                    <option value="login_attempts_gt">Failed Logins &gt; Threshold</option>
+                    <option value="login_success">Successful Login</option>
+                    <option value="commands_run_gt">Commands Run &gt; Threshold</option>
+                    <option value="files_downloaded_gt">Files Downloaded &gt; Threshold</option>
+                  </select>
+                </div></div>
+                <div class="col-md-2"><div class="form-group"><label>Threshold</label><input type="number" id="rThreshold" class="form-control" value="10"></div></div>
+                <div class="col-md-2"><div class="form-group"><label>Severity</label><select id="rSeverity" class="form-control"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div></div>
+                <div class="col-md-1"><div class="form-group"><label>&nbsp;</label><button class="btn btn-success btn-block" onclick="addRule()" title="Add rule"><i class="fas fa-plus"></i></button></div></div>
+              </div>
+              <table class="table table-sm table-bordered mt-1">
+                <thead><tr><th>Rule Name</th><th>Condition</th><th>Threshold</th><th>Severity</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="rulesBody"><tr><td colspan="6" class="text-center text-muted py-2">Loading rules…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ④ Alerts & Notifications -->
+          <div class="cfg-section">
+            <div class="cfg-header" onclick="toggleCfg(this)">
+              <div class="cfg-icon" style="background:rgba(63,185,80,0.12);color:var(--hd-green3)"><i class="fas fa-satellite-dish"></i></div>
+              <div><div class="cfg-title">Alerts &amp; Notifications</div><div class="cfg-sub">Webhook, Email and Telegram delivery channels</div></div>
+              <i class="fas fa-chevron-down cfg-chevron"></i>
+            </div>
+            <div class="cfg-body">
+              <!-- Webhook -->
+              <p class="text-muted small mb-2" style="text-transform:uppercase;letter-spacing:.05em;font-size:10px">Webhook</p>
+              <div class="row">
+                <div class="col-md-7"><div class="form-group"><label>Webhook URL <small class="text-muted">(Slack, Teams, custom)</small></label>
+                  <div class="input-group">
+                    <input type="url" id="notifWebhookUrl" class="form-control" placeholder="https://hooks.slack.com/services/…">
+                    <div class="input-group-append"><button class="btn btn-outline-secondary" onclick="testWebhook()"><i class="fas fa-paper-plane mr-1"></i>Test</button></div>
+                  </div>
+                </div></div>
+                <div class="col-md-5 d-flex align-items-center pt-3">
+                  <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="notifWebhookEnabled"><label class="custom-control-label" for="notifWebhookEnabled">Enable webhook</label></div>
+                </div>
+              </div>
+              <div id="webhookTestResult" style="display:none;margin-bottom:10px;font-size:13px"></div>
+              <div class="cfg-divider"></div>
+              <!-- Email -->
+              <p class="text-muted small mb-2" style="text-transform:uppercase;letter-spacing:.05em;font-size:10px">Email (SMTP)</p>
+              <div class="row">
+                <div class="col-md-4"><div class="form-group"><label>Send Alerts To</label><input type="email" id="notifEmailTo" class="form-control" placeholder="security@example.com"></div></div>
+                <div class="col-md-4"><div class="form-group"><label>SMTP Host</label><input type="text" id="notifEmailHost" class="form-control" placeholder="smtp.example.com"></div></div>
+                <div class="col-md-2"><div class="form-group"><label>Port</label><input type="number" id="notifEmailPort" class="form-control" value="587"></div></div>
+                <div class="col-md-2 d-flex align-items-center pt-3">
+                  <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="notifEmailEnabled"><label class="custom-control-label" for="notifEmailEnabled">Enable</label></div>
+                </div>
+              </div>
+              <div class="cfg-divider"></div>
+              <!-- Telegram -->
+              <p class="text-muted small mb-2" style="text-transform:uppercase;letter-spacing:.05em;font-size:10px"><i class="fab fa-telegram mr-1" style="color:var(--hd-teal3)"></i>Telegram</p>
+              <div class="row">
+                <div class="col-md-5"><div class="form-group"><label>Bot Token <small class="text-muted">(from @BotFather)</small></label><input type="password" class="form-control" id="tgBotToken" placeholder="123456789:ABCdef…"></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Chat ID <small class="text-muted">(@userinfobot)</small></label><input type="text" class="form-control" id="tgChatId" placeholder="123456789"></div></div>
+                <div class="col-md-2 d-flex align-items-center pt-3">
+                  <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="tgEnabled"><label class="custom-control-label" for="tgEnabled">Enable</label></div>
+                </div>
+                <div class="col-md-2 d-flex align-items-center pt-3">
+                  <button class="btn btn-sm btn-info" onclick="testTelegram()" id="testTelegramBtn"><i class="fab fa-telegram mr-1"></i>Test</button>
+                  <span id="telegramTestResult" style="display:none;margin-left:8px;font-size:12px"></span>
+                </div>
+              </div>
+              <div class="cfg-divider"></div>
+              <!-- Severity + Save -->
+              <div class="row align-items-end">
+                <div class="col-md-4"><div class="form-group mb-0"><label>Minimum Severity to Notify</label>
+                  <select id="notifMinSev" class="form-control"><option value="low">All (Low+)</option><option value="medium">Medium+</option><option value="high" selected>High only</option></select>
+                </div></div>
+                <div class="col-md-8"><button class="btn btn-sm btn-success" onclick="saveNotifications()"><i class="fas fa-save mr-1"></i>Save Notification Settings</button></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ⑤ API Integrations -->
+          <div class="cfg-section">
+            <div class="cfg-header" onclick="toggleCfg(this)">
+              <div class="cfg-icon" style="background:rgba(137,87,229,0.15);color:var(--hd-purple3)"><i class="fas fa-key"></i></div>
+              <div><div class="cfg-title">API Integrations</div><div class="cfg-sub">GeoIP enrichment and VirusTotal malware scanning</div></div>
+              <i class="fas fa-chevron-down cfg-chevron"></i>
+            </div>
+            <div class="cfg-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <p class="text-muted small mb-1" style="text-transform:uppercase;letter-spacing:.05em;font-size:10px">GeoIP — ip-api.com</p>
+                  <p class="text-muted small mb-0">Free tier · 45 req/min · No key required. Runs automatically for each new attacker IP.</p>
+                  <span class="cfg-tag mt-2 d-inline-block" style="background:rgba(63,185,80,0.12);color:var(--hd-green3)"><i class="fas fa-check-circle mr-1"></i>Active</span>
+                </div>
+                <div class="col-md-6">
+                  <p class="text-muted small mb-1" style="text-transform:uppercase;letter-spacing:.05em;font-size:10px">VirusTotal</p>
+                  <div class="form-group mb-1"><label class="small">API Key</label><input type="password" class="form-control" id="vtKey" placeholder="Paste VT API key here"></div>
+                  <small class="text-muted">Set via <code>VT_API_KEY</code> env variable in <code>backend/.env</code></small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ⑥ Data Retention -->
+          <div class="cfg-section">
+            <div class="cfg-header" onclick="toggleCfg(this)">
+              <div class="cfg-icon" style="background:rgba(207,34,46,0.12);color:var(--hd-red3)"><i class="fas fa-database"></i></div>
+              <div><div class="cfg-title">Data Retention</div><div class="cfg-sub">How long to keep events, sessions and enrichments</div></div>
+              <span id="lastPurgeBadge" class="cfg-tag" style="background:rgba(255,255,255,0.07);color:var(--hd-text3)"></span>
+              <i class="fas fa-chevron-down cfg-chevron"></i>
+            </div>
+            <div class="cfg-body">
+              <div class="row">
+                <div class="col-md-4"><div class="form-group"><label>Raw Events — keep for</label><select id="retEvents" class="form-control"><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option><option value="180">180 days</option><option value="365">365 days</option></select></div></div>
+                <div class="col-md-4"><div class="form-group"><label>Sessions — keep for</label><select id="retSessions" class="form-control"><option value="60">60 days</option><option value="90">90 days</option><option value="180">180 days</option><option value="365">365 days</option></select></div></div>
+                <div class="col-md-4"><div class="form-group"><label>IP Enrichments — keep for</label><select id="retEnrich" class="form-control"><option value="60">60 days</option><option value="90">90 days</option><option value="180">180 days</option><option value="365">365 days</option></select></div></div>
+              </div>
+              <div id="purgeResult" style="display:none;margin-bottom:10px"></div>
+              <button class="btn btn-sm btn-primary mr-2" onclick="saveRetention()"><i class="fas fa-save mr-1"></i>Save Policy</button>
+              <button class="btn btn-sm btn-danger" onclick="triggerPurge()" id="purgeBtn"><i class="fas fa-trash mr-1"></i>Purge Old Data Now</button>
+              <small class="text-muted ml-2">Auto-purge runs daily at startup.</small>
+            </div>
+          </div>
+
+          </div>
+        </section>
     </div>
 
-    <script src="plugins/jquery/jquery.min.js"></script>
-    <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="dist/js/adminlte.min.js"></script>
+    <footer class="main-footer">
+        <strong>HoneyDash v1.0 — Real-Time Honeypot Visualization &amp; Alerting</strong>
+    </footer>
+</div>
 
-    <script>
-        $(document).ready(function () {
-            // Toggle between live connection and file upload based on selection
-            $('select:contains("Connection Mode")').change(function () {
-                if ($(this).val() === 'Log File Upload') {
-                    $('#liveConnection').hide();
-                    $('#fileUpload').show();
-                } else {
-                    $('#liveConnection').show();
-                    $('#fileUpload').hide();
-                }
-            });
+<script src="plugins/jquery/jquery.min.js"></script>
+<script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="dist/js/adminlte.min.js"></script>
+<script>
+const API = 'http://localhost:8000';
+
+function getToken() { return localStorage.getItem('hd_token'); }
+function authHdr() { return { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' }; }
+
+function logout() {
+    localStorage.removeItem('hd_token');
+    window.location.href = 'login.html';
+}
+
+// ── Guard + sidebar user info ──────────────────────────────────────────────
+if (!getToken()) window.location.href = 'login.html';
+try {
+    const p = JSON.parse(atob(getToken().split('.')[1]));
+    if (p.role === 'admin') {
+        document.getElementById('usersNavItem').style.display = '';
+        const ml = document.getElementById('userMgmtLink');
+        if (ml) ml.style.display = '';
+    }
+    if (p.sub) {
+        document.getElementById('sidebarUsername').textContent = p.sub.split('@')[0];
+        const fe = document.getElementById('sidebarFullEmail');
+        if (fe) fe.textContent = p.sub;
+        const rb = document.getElementById('sidebarRoleBadge');
+        if (rb) {
+            rb.textContent = p.role || 'analyst';
+            rb.className = 'badge mt-1 ' + (p.role === 'admin' ? 'badge-danger' : p.role === 'analyst' ? 'badge-primary' : 'badge-secondary');
+        }
+    }
+} catch(e) {}
+
+// ── Accordion toggle ───────────────────────────────────────────────────────
+function toggleCfg(header) {
+    const body = header.nextElementSibling;
+    const isOpen = header.classList.contains('open');
+    header.classList.toggle('open', !isOpen);
+    body.classList.toggle('open', !isOpen);
+}
+
+// ── Mode toggle ────────────────────────────────────────────────────────────
+function toggleMode() {
+    const mode = document.getElementById('cfgMode').value;
+    document.getElementById('liveFields').style.display = (mode === 'live') ? '' : 'none';
+}
+
+// ── Load saved config ──────────────────────────────────────────────────────
+async function loadConfig() {
+    try {
+        const r = await fetch(API + '/api/honeypot-config', { headers: authHdr() });
+        if (!r.ok) return;
+        const cfg = await r.json();
+        document.getElementById('cfgType').value     = cfg.honeypot_type    || 'cowrie';
+        document.getElementById('cfgMode').value     = cfg.connection_mode  || 'live';
+        document.getElementById('cfgSensor').value   = cfg.sensor_name      || '';
+        document.getElementById('cfgHost').value     = cfg.host             || '';
+        document.getElementById('cfgPort').value     = cfg.port             || 2222;
+        document.getElementById('cfgProtocol').value = cfg.protocol         || 'TCP';
+        document.getElementById('cfgLogPath').value  = cfg.log_path         || '';
+        document.getElementById('cfgNotes').value    = cfg.notes            || '';
+        toggleMode();
+        updateConnBadge(cfg.last_test_status);
+    } catch (e) { console.warn('Could not load config:', e); }
+}
+
+function updateConnBadge(status) {
+    const badge = document.getElementById('connBadge');
+    if (status === 'connected') {
+        badge.className = 'badge badge-success status-badge';
+        badge.textContent = 'Connected';
+    } else if (status === 'failed') {
+        badge.className = 'badge badge-danger status-badge';
+        badge.textContent = 'Failed';
+    } else {
+        badge.className = 'badge badge-secondary status-badge';
+        badge.textContent = 'Not Tested';
+    }
+}
+
+// ── HD_UC_03: Test Connection ──────────────────────────────────────────────
+async function testConnection() {
+    const host = document.getElementById('cfgHost').value.trim();
+    const port = parseInt(document.getElementById('cfgPort').value, 10);
+    const box  = document.getElementById('testResult');
+
+    if (!host) { alert('Enter a host / IP to test.'); return; }
+
+    box.style.display = '';
+    box.className = 'test-result-box';
+    box.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing connection to ' + host + ':' + port + '…';
+
+    try {
+        const r = await fetch(API + '/api/honeypot-config/test', {
+            method: 'POST',
+            headers: authHdr(),
+            body: JSON.stringify({ host, port }),
         });
+        const data = await r.json();
+        box.className = 'test-result-box ' + (data.connected ? 'success' : 'danger');
+        box.innerHTML = (data.connected ? '<i class="fas fa-check-circle"></i> ' : '<i class="fas fa-times-circle"></i> ') + data.message;
+        updateConnBadge(data.status);
+    } catch (e) {
+        box.className = 'test-result-box danger';
+        box.innerHTML = '<i class="fas fa-times-circle"></i> Request failed: ' + e.message;
+    }
+}
 
-        function testConnection() {
-            alert('Testing connection to honeypot...');
-            setTimeout(() => alert('Connection successful!'), 1000);
+// ── HD_UC_03: Save Config ──────────────────────────────────────────────────
+async function saveConnection() {
+    const payload = {
+        honeypot_type:   document.getElementById('cfgType').value,
+        connection_mode: document.getElementById('cfgMode').value,
+        sensor_name:     document.getElementById('cfgSensor').value.trim(),
+        host:            document.getElementById('cfgHost').value.trim(),
+        port:            parseInt(document.getElementById('cfgPort').value, 10),
+        protocol:        document.getElementById('cfgProtocol').value,
+        log_path:        document.getElementById('cfgLogPath').value.trim(),
+        notes:           document.getElementById('cfgNotes').value.trim() || null,
+    };
+    try {
+        const r = await fetch(API + '/api/honeypot-config', {
+            method: 'POST',
+            headers: authHdr(),
+            body: JSON.stringify(payload),
+        });
+        const data = await r.json();
+        if (data.saved) {
+            toastSuccess('Configuration saved successfully');
+        } else {
+            alert('Save failed');
+        }
+    } catch (e) {
+        alert('Save failed: ' + e.message);
+    }
+}
+
+// ── HD_UC_05: Upload Log File ──────────────────────────────────────────────
+async function uploadLogFile() {
+    const fileInput = document.getElementById('logFile');
+    if (!fileInput.files.length) { alert('Please select a file first.'); return; }
+
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+
+    document.getElementById('uploadProgress').style.display = '';
+    document.getElementById('uploadResult').style.display = 'none';
+    document.getElementById('uploadBtn').disabled = true;
+
+    try {
+        const r = await fetch(API + '/api/upload/logs', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + getToken() },
+            body: formData,
+        });
+        const data = await r.json();
+
+        document.getElementById('uploadProgress').style.display = 'none';
+        document.getElementById('uploadResult').style.display = '';
+
+        const msgEl = document.getElementById('uploadMessage');
+        if (r.ok) {
+            msgEl.className = 'text-success';
+            msgEl.textContent = data.message;
+        } else {
+            msgEl.className = 'text-danger';
+            msgEl.textContent = data.detail || 'Upload failed';
         }
 
-        function saveConnection() {
-            alert('Connection settings saved!');
-        }
+        if (r.ok) {
+            const statsEl = document.getElementById('uploadStats');
+            statsEl.innerHTML = [
+                { val: data.total_lines, lbl: 'Total Lines',  color: 'secondary' },
+                { val: data.processed,   lbl: 'Processed',    color: 'success' },
+                { val: data.skipped,     lbl: 'Skipped',      color: 'info' },
+                { val: data.errors,      lbl: 'Errors',       color: 'danger' },
+            ].map(s => `
+                <div class="col-3">
+                    <div class="stat-card border-${s.color}">
+                        <div class="stat-val text-${s.color}">${s.val}</div>
+                        <div class="stat-lbl">${s.lbl}</div>
+                    </div>
+                </div>`).join('');
 
-        function addRule() {
-            alert('New alert rule added!');
-        }
-
-        function saveAPIs() {
-            alert('API settings saved!');
-        }
-
-        function archiveNow() {
-            alert('Archiving data...');
-        }
-
-        function purgeNow() {
-            if (confirm('Are you sure you want to purge old data? This cannot be undone!')) {
-                alert('Data purged successfully!');
+            if (data.error_samples && data.error_samples.length) {
+                document.getElementById('uploadErrors').style.display = '';
+                const ul = document.getElementById('uploadErrorList');
+                ul.innerHTML = data.error_samples.map(e => `<li>${e}</li>`).join('');
+            } else {
+                document.getElementById('uploadErrors').style.display = 'none';
             }
         }
+    } catch (e) {
+        document.getElementById('uploadProgress').style.display = 'none';
+        document.getElementById('uploadResult').style.display = '';
+        document.getElementById('uploadMessage').className = 'text-danger';
+        document.getElementById('uploadMessage').textContent = 'Upload failed: ' + e.message;
+    } finally {
+        document.getElementById('uploadBtn').disabled = false;
+    }
+}
 
-        function saveAllConfig() {
-            alert('All configuration saved!');
-        }
+// ── Alert Rules ────────────────────────────────────────────────────────────
+const CONDITION_LABELS = {
+    login_attempts_gt:  'Failed Logins > Threshold',
+    login_success:      'Successful Login',
+    commands_run_gt:    'Commands Run > Threshold',
+    files_downloaded_gt:'Files Downloaded > Threshold',
+};
 
-        function resetConfig() {
-            if (confirm('Reset all settings to default?')) {
-                alert('Settings reset!');
-            }
+async function loadRules() {
+    try {
+        const r = await fetch(API + '/api/alert-rules', { headers: authHdr() });
+        if (!r.ok) return;
+        const rules = await r.json();
+        renderRules(rules);
+    } catch (e) { /* rules API not yet mounted — silently skip */ }
+}
+
+function renderRules(rules) {
+    const tbody = document.getElementById('rulesBody');
+    if (!rules.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No rules defined yet</td></tr>';
+        return;
+    }
+    tbody.innerHTML = rules.map(r => `
+        <tr>
+            <td>${r.name}</td>
+            <td>${CONDITION_LABELS[r.condition] || r.condition}</td>
+            <td>${r.threshold}</td>
+            <td><span class="badge badge-${r.severity === 'high' ? 'danger' : r.severity === 'medium' ? 'warning' : 'secondary'}">${r.severity}</span></td>
+            <td><span class="badge badge-${r.enabled ? 'success' : 'secondary'}">${r.enabled ? 'Active' : 'Disabled'}</span></td>
+            <td>
+                <button class="btn btn-xs btn-${r.enabled ? 'warning' : 'success'}" onclick="toggleRule(${r.id}, ${r.enabled})" title="${r.enabled ? 'Disable' : 'Enable'}">
+                    <i class="fas fa-${r.enabled ? 'pause' : 'play'}"></i>
+                </button>
+                <button class="btn btn-xs btn-danger ml-1" onclick="deleteRule(${r.id})" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>`).join('');
+}
+
+async function addRule() {
+    const name      = document.getElementById('rName').value.trim();
+    const condition = document.getElementById('rCondition').value;
+    const threshold = parseInt(document.getElementById('rThreshold').value, 10);
+    const severity  = document.getElementById('rSeverity').value;
+    if (!name) { alert('Enter a rule name.'); return; }
+    try {
+        const r = await fetch(API + '/api/alert-rules', {
+            method: 'POST',
+            headers: authHdr(),
+            body: JSON.stringify({ name, condition, threshold, severity }),
+        });
+        if (r.ok) { loadRules(); toastSuccess('Rule added'); }
+        else { const d = await r.json(); alert(d.detail || 'Failed to add rule'); }
+    } catch (e) { alert('Failed: ' + e.message); }
+}
+
+async function toggleRule(id, currentlyEnabled) {
+    try {
+        await fetch(API + '/api/alert-rules/' + id, {
+            method: 'PUT',
+            headers: authHdr(),
+            body: JSON.stringify({ enabled: !currentlyEnabled }),
+        });
+        loadRules();
+    } catch (e) { alert('Failed: ' + e.message); }
+}
+
+async function deleteRule(id) {
+    if (!confirm('Delete this alert rule?')) return;
+    try {
+        await fetch(API + '/api/alert-rules/' + id, { method: 'DELETE', headers: authHdr() });
+        loadRules();
+    } catch (e) { alert('Failed: ' + e.message); }
+}
+
+// ── Toast helper ───────────────────────────────────────────────────────────
+function toastSuccess(msg) {
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#28a745;color:#fff;padding:12px 20px;border-radius:6px;z-index:9999;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.2)';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+// ── HD_UC_15: Retention ────────────────────────────────────────────────────
+async function loadRetention() {
+    try {
+        const r = await fetch(API + '/api/retention', { headers: authHdr() });
+        if (!r.ok) return;
+        const d = await r.json();
+        setSelectVal('retEvents',   d.events_days   || 60);
+        setSelectVal('retSessions', d.sessions_days || 90);
+        setSelectVal('retEnrich',   d.enrichment_days || 90);
+        const badge = document.getElementById('lastPurgeBadge');
+        if (d.last_purge_at) {
+            badge.className = 'badge badge-success';
+            badge.textContent = 'Last purge: ' + new Date(d.last_purge_at).toLocaleString();
+        } else {
+            badge.className = 'badge badge-secondary';
+            badge.textContent = 'Never purged';
         }
-    </script>
+    } catch(e) { console.warn('retention load failed', e); }
+}
+
+function setSelectVal(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const opt = Array.from(el.options).find(o => parseInt(o.value) === parseInt(val));
+    if (opt) el.value = opt.value;
+}
+
+async function saveRetention() {
+    const payload = {
+        events_days:     parseInt(document.getElementById('retEvents').value),
+        sessions_days:   parseInt(document.getElementById('retSessions').value),
+        enrichment_days: parseInt(document.getElementById('retEnrich').value),
+    };
+    try {
+        const r = await fetch(API + '/api/retention', {
+            method: 'POST', headers: authHdr(), body: JSON.stringify(payload),
+        });
+        if (r.ok) toastSuccess('Retention policy saved');
+        else alert('Save failed');
+    } catch(e) { alert('Save failed: ' + e.message); }
+}
+
+async function triggerPurge() {
+    if (!confirm('This will immediately delete all events and sessions older than your retention limits. Continue?')) return;
+    const btn = document.getElementById('purgeBtn');
+    const res = document.getElementById('purgeResult');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Purging…';
+    res.style.display = 'none';
+    try {
+        const r = await fetch(API + '/api/retention/purge', { method: 'POST', headers: authHdr() });
+        const d = await r.json();
+        res.style.display = '';
+        if (r.ok && d.success) {
+            res.className = 'alert alert-success';
+            res.innerHTML = `<i class="fas fa-check-circle mr-1"></i><strong>Purge complete:</strong>
+                ${d.deleted_events} events and ${d.deleted_sessions} sessions deleted.
+                Completed at ${new Date(d.purged_at).toLocaleString()}.`;
+            loadRetention();
+        } else {
+            res.className = 'alert alert-danger';
+            res.textContent = d.detail || 'Purge failed';
+        }
+    } catch(e) {
+        res.style.display = '';
+        res.className = 'alert alert-danger';
+        res.textContent = 'Purge error: ' + e.message;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash"></i> Purge Old Data Now';
+    }
+}
+
+// ── Notifications ──────────────────────────────────────────────────────────
+async function loadNotifications() {
+    try {
+        const r = await fetch(API + '/api/notifications', { headers: authHdr() });
+        if (!r.ok) return;
+        const d = await r.json();
+        document.getElementById('notifWebhookUrl').value     = d.webhook_url    || '';
+        document.getElementById('notifWebhookEnabled').checked = d.webhook_enabled || false;
+        document.getElementById('notifEmailTo').value        = d.email_to       || '';
+        document.getElementById('notifEmailHost').value      = d.email_host     || '';
+        document.getElementById('notifEmailPort').value      = d.email_port     || 587;
+        document.getElementById('notifEmailEnabled').checked = d.email_enabled  || false;
+        document.getElementById('notifMinSev').value         = d.min_severity   || 'high';
+        document.getElementById('tgEnabled').checked         = d.tg_enabled     || false;
+        document.getElementById('tgBotToken').value          = d.tg_bot_token   || '';
+        document.getElementById('tgChatId').value            = d.tg_chat_id     || '';
+    } catch(e) { console.warn('notifications load failed', e); }
+}
+
+async function saveNotifications() {
+    const payload = {
+        webhook_url:     document.getElementById('notifWebhookUrl').value.trim() || null,
+        webhook_enabled: document.getElementById('notifWebhookEnabled').checked,
+        email_to:        document.getElementById('notifEmailTo').value.trim()    || null,
+        email_host:      document.getElementById('notifEmailHost').value.trim()  || null,
+        email_port:      parseInt(document.getElementById('notifEmailPort').value) || 587,
+        email_enabled:   document.getElementById('notifEmailEnabled').checked,
+        min_severity:    document.getElementById('notifMinSev').value,
+        tg_enabled:      document.getElementById('tgEnabled').checked,
+        tg_bot_token:    document.getElementById('tgBotToken').value.trim() || null,
+        tg_chat_id:      document.getElementById('tgChatId').value.trim() || null,
+    };
+    try {
+        const r = await fetch(API + '/api/notifications', {
+            method: 'POST', headers: authHdr(), body: JSON.stringify(payload),
+        });
+        if (r.ok) toastSuccess('Notification settings saved');
+        else alert('Save failed');
+    } catch(e) { alert('Save failed: ' + e.message); }
+}
+
+async function testWebhook() {
+    const box = document.getElementById('webhookTestResult');
+    box.style.display = '';
+    box.textContent = 'Sending test…';
+    box.className = 'text-muted';
+    try {
+        const r = await fetch(API + '/api/notifications/test-webhook', {
+            method: 'POST', headers: authHdr(),
+        });
+        const d = await r.json();
+        box.textContent = d.success ? '✓ ' + d.message : '✗ ' + d.message;
+        box.className = d.success ? 'text-success' : 'text-danger';
+    } catch(e) {
+        box.textContent = '✗ ' + e.message;
+        box.className = 'text-danger';
+    }
+}
+
+async function testTelegram() {
+    const box = document.getElementById('telegramTestResult');
+    const btn = document.getElementById('testTelegramBtn');
+    box.style.display = '';
+    box.textContent = 'Sending…';
+    box.className = 'text-muted';
+    btn.disabled = true;
+    try {
+        const r = await fetch(API + '/api/notifications/test-telegram', {
+            method: 'POST', headers: authHdr(),
+        });
+        const d = await r.json();
+        if (r.ok && d.success) {
+            box.textContent = '✓ Message sent!';
+            box.className = 'text-success';
+        } else {
+            box.textContent = '✗ ' + (d.detail || d.message || 'Failed');
+            box.className = 'text-danger';
+        }
+    } catch(e) {
+        box.textContent = '✗ ' + e.message;
+        box.className = 'text-danger';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadConfig();
+loadRules();
+loadRetention();
+loadNotifications();
+</script>
 </body>
-
 </html>

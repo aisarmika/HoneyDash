@@ -99,7 +99,7 @@ class Session:
                 "dst_port": 22,
                 "session": self.id,
                 "timestamp": ts(),
-                "sensor": "honeypot-demo",
+                "sensor": "cowrie-01",
             }
 
         if self.phase == "brute":
@@ -113,7 +113,7 @@ class Session:
                     "src_port": self.src_port,
                     "session": self.id,
                     "timestamp": ts(),
-                    "sensor": "honeypot-demo",
+                    "sensor": "cowrie-01",
                 }
             # Random chance of success
             if random.random() < 0.15:
@@ -126,7 +126,7 @@ class Session:
                     "src_port": self.src_port,
                     "session": self.id,
                     "timestamp": ts(),
-                    "sensor": "honeypot-demo",
+                    "sensor": "cowrie-01",
                 }
             self.phase = "close"
             return None  # skip to close
@@ -142,7 +142,7 @@ class Session:
                     "src_port": self.src_port,
                     "session": self.id,
                     "timestamp": ts(),
-                    "sensor": "honeypot-demo",
+                    "sensor": "cowrie-01",
                 }
                 if random.random() < 0.3:
                     # Also attempt file download
@@ -161,7 +161,7 @@ class Session:
                 "src_port": self.src_port,
                 "session": self.id,
                 "timestamp": ts(),
-                "sensor": "honeypot-demo",
+                "sensor": "cowrie-01",
             }
 
         if self.phase == "close":
@@ -173,7 +173,7 @@ class Session:
                 "src_port": self.src_port,
                 "session": self.id,
                 "timestamp": ts(),
-                "sensor": "honeypot-demo",
+                "sensor": "cowrie-01",
             }
 
         return None  # phase == "done"

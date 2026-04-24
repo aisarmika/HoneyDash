@@ -29,24 +29,61 @@ services:
     container_name: honeydash-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@honeydash.local
+      PGADMIN_DEFAULT_EMAIL: admin@honeydash.com
       PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_CHECK_EMAIL_DELIVERABILITY: "False"
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+      # No user-facing master-password prompt
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      # Fixed server-side encryption key – lets pgAdmin save/load passwords
+      # without a per-user master password (same key derivation as pgAdmin's
+      # own crypto.py: Fernet( base64url( SHA256( key ) ) ))
+      PGADMIN_CONFIG_ENCRYPTION_KEY: "'HoneyDashPgadminKey2024'"
+    # init.sh: creates pgpass, imports servers.json, pre-seeds encrypted
+    # password into pgadmin4.db, then hands off to /entrypoint.sh
+    entrypoint: ["/bin/sh", "/pgadmin4/init.sh"]
     ports:
       - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin          # persist config across restarts
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./pgadmin/init.sh:/pgadmin4/init.sh:ro
     depends_on:
       - postgres
     networks:
       - honeydash-net
 
-  # ── Cowrie SSH honeypot ──────────────────────────────────────────────────────
+  # ── Cowrie SSH/Telnet honeypot ───────────────────────────────────────────────
   cowrie:
     image: cowrie/cowrie:latest
     container_name: honeydash-cowrie
     restart: unless-stopped
     ports:
-      - "2222:2222"   # SSH honeypot port (forward your router port 22 → 2222 for real attacks)
+      - "2222:2222"   # SSH honeypot  (forward router port 22 → 2222 for real traffic)
+      - "2223:2223"   # Telnet honeypot
     volumes:
       - cowrie_logs:/cowrie/var/log/cowrie
+    networks:
+      - honeydash-net
+
+  # ── Dionaea multi-protocol honeypot ─────────────────────────────────────────
+  # Captures: HTTP exploits, SMB/EternalBlue, FTP, MySQL, MSSQL, SIP + malware binaries
+  dionaea:
+    image: dinotools/dionaea:latest
+    container_name: honeydash-dionaea
+    restart: unless-stopped
+    ports:
+      - "2121:21"        # FTP honeypot  (host 2121; host port 21 in use)
+      - "42:42"          # Nameserver (old, targeted by scanners)
+      - "8880:80"        # HTTP exploit listener  (use 8880 to avoid conflict with nginx:80)
+      - "4443:443"       # HTTPS exploit listener
+      - "4445:445"       # SMB honeypot (host 4445; Windows uses 445)
+      - "1433:1433"      # Microsoft SQL Server
+      - "33306:3306"     # MySQL honeypot (host 33306 to avoid local MySQL conflict)
+      - "5060:5060/udp"  # SIP VoIP scanning
+      - "5061:5061"      # SIP TLS
+    volumes:
+      - dionaea_data:/opt/dionaea/var
     networks:
       - honeydash-net
 
@@ -61,6 +98,7 @@ services:
       - "8000:8000"
     volumes:
       - cowrie_logs:/var/log/cowrie
+      - dionaea_data:/var/dionaea          # Dionaea SQLite + logs
     env_file:
       - ./backend/.env
     command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
@@ -68,6 +106,8 @@ services:
       postgres:
         condition: service_healthy
       cowrie:
+        condition: service_started
+      dionaea:
         condition: service_started
     networks:
       - honeydash-net
@@ -78,7 +118,7 @@ services:
     container_name: honeydash-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8090:80"        # Host 8090 (port 80 taken by Apache/XAMPP)
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
     networks:
@@ -100,9 +140,29 @@ services:
     networks:
       - honeydash-net
 
+  # ── Mock Dionaea generator (only with: docker compose --profile dev up) ───────
+  mock-dionaea:
+    build:
+      context: ./mock_dionaea
+      dockerfile: Dockerfile
+    container_name: honeydash-mock-dionaea
+    environment:
+      - BACKEND_URL=http://backend:8000
+      - SENSOR_API_KEY=honeydash-sensor-key-change-me
+      - EVENTS_PER_SECOND=0.4
+      - SENSOR_NAME=dionaea-01
+    profiles:
+      - dev
+    depends_on:
+      - backend
+    networks:
+      - honeydash-net
+
 volumes:
   postgres_data:
   cowrie_logs:
+  dionaea_data:
+  pgadmin_data:
 
 networks:
   honeydash-net:

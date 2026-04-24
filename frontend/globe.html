@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HoneyDash | 3D Attack Globe</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="dist/css/adminlte.min.css">
+  <link rel="stylesheet" href="dist/css/dark-theme.css">
+  <link rel="stylesheet" href="enterprise.css">
+  <style>
+    /* Globe card fills available height */
+    #globe-card .card-body { padding:0; }
+    #globe-container {
+      width:100%; height:calc(100vh - 230px); min-height:520px;
+      background:#040d1a; border-radius:0 0 4px 4px;
+    }
+
+    /* Live badge */
+    .globe-live-badge {
+      display:inline-flex; align-items:center; gap:5px;
+      background:rgba(220,53,69,0.12); border:1px solid rgba(220,53,69,0.35);
+      border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700;
+      color:#dc3545; letter-spacing:0.8px;
+    }
+    .globe-live-dot {
+      width:7px; height:7px; background:#dc3545; border-radius:50%;
+      animation:gPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes gPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(1.5)} }
+
+    /* Stat cards row */
+    .globe-stat-card {
+      background:var(--hd-surface2); border:1px solid var(--hd-border);
+      border-radius:6px; padding:10px 14px; text-align:center;
+    }
+    .globe-stat-card .gs-num {
+      display:block; font-size:22px; font-weight:700; color:#00c8ff;
+      line-height:1.1;
+    }
+    .globe-stat-card .gs-label {
+      display:block; font-size:10px; color:var(--hd-text3);
+      text-transform:uppercase; letter-spacing:0.5px; margin-top:3px;
+    }
+
+    /* Arc counter overlay inside globe */
+    .globe-arc-overlay {
+      position:absolute; bottom:14px; right:14px; z-index:10;
+      background:rgba(4,13,26,0.82); border:1px solid rgba(0,200,255,0.2);
+      border-radius:8px; padding:8px 14px; text-align:center;
+      pointer-events:none;
+    }
+    .globe-arc-overlay .ao-num { font-size:24px; font-weight:700; color:#00c8ff; display:block; line-height:1; }
+    .globe-arc-overlay .ao-lbl { font-size:10px; color:#4a7c99; text-transform:uppercase; letter-spacing:0.5px; }
+
+    /* Recent feed overlay inside globe */
+    .globe-feed-overlay {
+      position:absolute; bottom:14px; left:14px; z-index:10;
+      max-width:300px; pointer-events:none;
+    }
+    .gf-item {
+      display:flex; align-items:center; gap:7px; padding:3px 0;
+      font-size:11px; color:#8aa8c0;
+      animation:gfIn 0.3s ease;
+    }
+    @keyframes gfIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+    .gf-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+    /* Controls */
+    .globe-ctrl-btn {
+      background:var(--hd-surface2); border:1px solid var(--hd-border);
+      color:var(--hd-text2); border-radius:5px; padding:4px 12px;
+      font-size:12px; cursor:pointer; transition:background 0.15s;
+      display:inline-flex; align-items:center; gap:5px;
+    }
+    .globe-ctrl-btn:hover { background:var(--hd-surface3); }
+    .globe-ctrl-btn.active { background:rgba(0,200,255,0.15); border-color:rgba(0,200,255,0.4); color:#00c8ff; }
+
+    /* Wrapper needs relative for overlay positioning */
+    .globe-body-wrap { position:relative; }
+  </style>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+  <!-- ── Navbar ────────────────────────────────────────────────────────── -->
+  <nav class="main-header navbar navbar-expand navbar-dark">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="#" class="nav-link">
+          <span class="globe-live-badge"><span class="globe-live-dot"></span>LIVE</span>
+        </a>
+      </li>
+    </ul>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="fullscreen" href="#" role="button"><i class="fas fa-expand-arrows-alt"></i></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="#" class="brand-link">
+      <img src="dist/img/AdminLTELogo.png" alt="Logo" class="brand-image img-circle elevation-3">
+      <span class="brand-text font-weight-light">HoneyDash</span>
+    </a>
+    <div class="sidebar">
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image"><img src="dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User"></div>
+        <div class="info">
+          <a href="#" class="d-block"><span id="sidebarUsername">Analyst</span></a>
+        </div>
+      </div>
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+          <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p></a></li>
+          <li class="nav-item"><a href="sessions.html" class="nav-link"><i class="nav-icon fas fa-list"></i><p>Attack Sessions</p></a></li>
+          <li class="nav-item"><a href="alerts.html" class="nav-link"><i class="nav-icon fas fa-exclamation-triangle"></i><p>Alerts</p></a></li>
+          <li class="nav-item"><a href="globe.html" class="nav-link active"><i class="nav-icon fas fa-globe-asia" style="color:#00c8ff"></i><p style="color:#00c8ff">3D Attack Globe</p></a></li>
+          <li class="nav-item"><a href="reports.html" class="nav-link"><i class="nav-icon fas fa-chart-bar"></i><p>Reports</p></a></li>
+          <li class="nav-item"><a href="configuration.html" class="nav-link"><i class="nav-icon fas fa-cog"></i><p>Configuration</p></a></li>
+          <li class="nav-item" id="usersNavItem" style="display:none"><a href="users.html" class="nav-link"><i class="nav-icon fas fa-users"></i><p>Users</p></a></li>
+        </ul>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- ── Content ────────────────────────────────────────────────────────── -->
+  <div class="content-wrapper">
+    <div class="content-header" style="padding:10px 0 0">
+      <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0" style="font-size:18px;font-weight:700;color:#00c8ff">
+              <i class="fas fa-globe-asia mr-2"></i>Live 3D Attack Globe
+            </h1>
+            <small class="text-muted">Real-time honeypot attack origins — arcs fire as events arrive</small>
+          </div>
+          <div class="col-sm-6 text-right">
+            <button class="globe-ctrl-btn active" id="btnRotate" onclick="toggleRotate()">
+              <i class="fas fa-sync-alt"></i> Auto-rotate
+            </button>
+            <button class="globe-ctrl-btn ml-2" onclick="resetView()">
+              <i class="fas fa-compress-arrows-alt"></i> Reset View
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="content">
+      <div class="container-fluid">
+
+        <!-- ── Stat boxes ──────────────────────────────────────── -->
+        <div class="row mb-3">
+          <div class="col-6 col-md-2">
+            <div class="globe-stat-card">
+              <span class="gs-num" id="gStatEvents">—</span>
+              <span class="gs-label">Events Today</span>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="globe-stat-card">
+              <span class="gs-num" id="gStatIPs">—</span>
+              <span class="gs-label">Unique IPs</span>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="globe-stat-card">
+              <span class="gs-num" id="gStatCountries">—</span>
+              <span class="gs-label">Countries</span>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="globe-stat-card">
+              <span class="gs-num" style="color:#ff4444" id="gStatHigh">—</span>
+              <span class="gs-label">High Severity</span>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="globe-stat-card">
+              <span class="gs-num" style="color:#ff9900" id="gStatMalware">—</span>
+              <span class="gs-label">Malware</span>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="globe-stat-card">
+              <span class="gs-num" style="color:#a78bfa" id="gStatML">—</span>
+              <span class="gs-label">ML Anomalies</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Globe card ──────────────────────────────────────── -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card card-outline" id="globe-card" style="border-color:rgba(0,200,255,0.3)">
+              <div class="card-header" style="border-bottom:1px solid rgba(0,200,255,0.15)">
+                <h3 class="card-title">
+                  <i class="fas fa-globe-asia mr-1" style="color:#00c8ff"></i>
+                  <span style="color:#00c8ff">Global Attack Map</span>
+                  <small class="ml-2 text-muted" style="font-size:11px">Drag to rotate · Scroll to zoom · Click dots for info</small>
+                </h3>
+                <div class="card-tools">
+                  <span class="badge mr-2" style="background:rgba(0,200,255,0.15);color:#00c8ff;border:1px solid rgba(0,200,255,0.3)">
+                    <i class="fas fa-bolt mr-1"></i><span id="gArcCount">0</span> arcs
+                  </span>
+                  <span id="gWsStatus" class="badge badge-danger">WS Offline</span>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <div class="globe-body-wrap">
+                  <div id="globe-container"></div>
+                  <!-- Overlays inside the globe -->
+                  <div class="globe-arc-overlay">
+                    <span class="ao-num" id="gArcCountOverlay">0</span>
+                    <span class="ao-lbl">Arcs Fired</span>
+                  </div>
+                  <div class="globe-feed-overlay" id="globeFeed"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <!-- ── Footer ────────────────────────────────────────────────────────── -->
+  <footer class="main-footer" style="padding:6px 16px;font-size:11px">
+    <strong>HoneyDash</strong> &mdash; Enterprise Honeypot Intelligence Platform
+    <div class="float-right d-none d-sm-inline">3D Attack Globe &mdash; Real-time Threat Visualization</div>
+  </footer>
+
+</div><!-- /.wrapper -->
+
+<script src="plugins/jquery/jquery.min.js"></script>
+<script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="dist/js/adminlte.min.js"></script>
+<script src="https://unpkg.com/globe.gl"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════════════════
+const API_BASE = 'http://localhost:8000';
+const token    = localStorage.getItem('hd_token');
+if (!token) window.location.href = 'login.html';
+
+function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
+async function apiFetch(path) {
+  const r = await fetch(API_BASE + path, { headers: authHeaders() });
+  if (r.status === 401) { localStorage.removeItem('hd_token'); window.location.href = 'login.html'; }
+  return r.json();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  GLOBE
+// ══════════════════════════════════════════════════════════════
+const TARGET_LAT = 6.1, TARGET_LNG = 100.4;
+let globeInstance, globeArcs = [], globePoints = [], globeRings = [];
+let arcsFired = 0, autoRotate = true;
+const ipGeoCache = {};
+
+const HOME_PT = [{ lat: TARGET_LAT, lng: TARGET_LNG, size: 0.6, color: '#00ff88', label: '🏠 Honeypot — UUM, Kedah, Malaysia' }];
+
+function initGlobe() {
+  const el = document.getElementById('globe-container');
+  globeInstance = Globe({ animateIn: true })(el);
+
+  globeInstance
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+    .atmosphereColor('#00c8ff')
+    .atmosphereAltitude(0.2)
+    .pointsData(HOME_PT)
+    .pointColor('color').pointAltitude(0.01).pointRadius('size').pointLabel('label')
+    .arcsData([])
+    .arcColor('color')
+    .arcAltitude(d => d.alt || 0.35)
+    .arcStroke(d => d.stroke || 0.7)
+    .arcDashLength(0.38).arcDashGap(1.6).arcDashAnimateTime(1800)
+    .arcLabel(d => d.tipLabel || '')
+    .ringsData([])
+    .ringColor(d => d.color)
+    .ringMaxRadius(4).ringPropagationSpeed(2.2).ringRepeatPeriod(800);
+
+  globeInstance.controls().autoRotate      = true;
+  globeInstance.controls().autoRotateSpeed = 0.4;
+  globeInstance.controls().enableDamping   = true;
+  globeInstance.controls().dampingFactor   = 0.1;
+  globeInstance.pointOfView({ lat: 20, lng: 60, altitude: 2.8 }, 0);
+
+  // Pulse home ring every 2.5s
+  setInterval(pulseHome, 2500);
+  pulseHome();
+
+  // Resize when window/sidebar changes
+  window.addEventListener('resize', resizeGlobe);
+  resizeGlobe();
+}
+
+function resizeGlobe() {
+  if (!globeInstance) return;
+  const el = document.getElementById('globe-container');
+  globeInstance.width(el.offsetWidth);
+  globeInstance.height(el.offsetHeight);
+}
+
+function pulseHome() {
+  if (!globeInstance) return;
+  const ring = { lat: TARGET_LAT, lng: TARGET_LNG, color: t => `rgba(0,255,136,${Math.max(0, 1-t*1.6)})` };
+  globeRings = [...globeRings, ring];
+  globeInstance.ringsData(globeRings);
+  setTimeout(() => { globeRings = globeRings.filter(r => r !== ring); globeInstance.ringsData(globeRings); }, 1800);
+}
+
+// ── Severity → style maps ────────────────────────────────────
+const SEV_COLOR  = { high:['rgba(255,68,68,0.95)','rgba(255,180,180,0.45)'], medium:['rgba(255,153,0,0.95)','rgba(255,210,120,0.45)'], low:['rgba(0,200,255,0.95)','rgba(140,220,255,0.45)'] };
+const SEV_ALT    = { high:0.45, medium:0.35, low:0.25 };
+const SEV_STROKE = { high:1.1,  medium:0.75, low:0.5  };
+const SEV_DOT    = { high:'#ff4444', medium:'#ff9900', low:'#00ccff' };
+
+function fireArc(srcLat, srcLng, severity, label) {
+  if (!globeInstance) return;
+  arcsFired++;
+  document.getElementById('gArcCount').textContent        = arcsFired.toLocaleString();
+  document.getElementById('gArcCountOverlay').textContent  = arcsFired.toLocaleString();
+
+  const sev = SEV_COLOR[severity] ? severity : 'low';
+  const arc = {
+    startLat: srcLat, startLng: srcLng,
+    endLat: TARGET_LAT, endLng: TARGET_LNG,
+    color: SEV_COLOR[sev], alt: SEV_ALT[sev], stroke: SEV_STROKE[sev],
+    tipLabel: label || '',
+  };
+
+  // Origin pulse ring
+  const ring = {
+    lat: srcLat, lng: srcLng,
+    color: t => { const b = sev==='high'?'255,68,68':sev==='medium'?'255,153,0':'0,200,255'; return `rgba(${b},${Math.max(0,1-t*1.8)})`; },
+  };
+  globeRings = [...globeRings, ring];
+  globeInstance.ringsData(globeRings);
+  setTimeout(() => { globeRings = globeRings.filter(r=>r!==ring); globeInstance.ringsData(globeRings); }, 1800);
+
+  globeArcs = [...globeArcs, arc];
+  globeInstance.arcsData(globeArcs);
+  setTimeout(() => { globeArcs = globeArcs.filter(a=>a!==arc); globeInstance.arcsData(globeArcs); }, 3500);
+
+  addFeedItem(label || 'Unknown', sev);
+}
+
+function addFeedItem(label, sev) {
+  const feed = document.getElementById('globeFeed');
+  const div  = document.createElement('div');
+  div.className = 'gf-item';
+  div.innerHTML = `<span class="gf-dot" style="background:${SEV_DOT[sev]||'#00ccff'}"></span>${escHtml(label)}`;
+  feed.insertBefore(div, feed.firstChild);
+  while (feed.children.length > 8) feed.removeChild(feed.lastChild);
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Controls ─────────────────────────────────────────────────
+function toggleRotate() {
+  autoRotate = !autoRotate;
+  globeInstance.controls().autoRotate = autoRotate;
+  const btn = document.getElementById('btnRotate');
+  btn.classList.toggle('active', autoRotate);
+  btn.innerHTML = `<i class="fas fa-sync-alt"></i> ${autoRotate ? 'Auto-rotate' : 'Paused'}`;
+}
+function resetView() { globeInstance.pointOfView({ lat: 20, lng: 60, altitude: 2.8 }, 1000); }
+
+// ══════════════════════════════════════════════════════════════
+//  DATA LOADING
+// ══════════════════════════════════════════════════════════════
+async function loadMapData() {
+  try {
+    const d = await apiFetch('/api/dashboard/map');
+    const pts = d.markers.map(loc => ({
+      lat: loc.lat, lng: loc.lng,
+      size: Math.max(0.18, Math.min(0.65, Math.sqrt(loc.count) * 0.08)),
+      color: '#ff4444',
+      label: `🔴 ${loc.country || '?'} · ${loc.count.toLocaleString()} attacks`,
+    }));
+    globePoints = [...HOME_PT, ...pts];
+    globeInstance.pointsData(globePoints);
+
+    d.markers.forEach(loc => {
+      if (loc.ips) loc.ips.forEach(ip => { ipGeoCache[ip] = { lat:loc.lat, lng:loc.lng, country:loc.country }; });
+    });
+
+    // Burst of arcs on load
+    const sevs = ['high','high','medium','medium','medium','low','low','low','low','low'];
+    d.markers.slice(0, 10).forEach((loc, i) => {
+      setTimeout(() => fireArc(loc.lat, loc.lng, sevs[i]||'low', `${loc.country||'?'} → Honeypot`), i * 420);
+    });
+  } catch(e) {}
+}
+
+async function loadStats() {
+  try {
+    const d = await apiFetch('/api/dashboard/stats');
+    const set = (id, v) => { const el=document.getElementById(id); if(el && v!==undefined) el.textContent=Number(v).toLocaleString(); };
+    set('gStatEvents',   d.total_attacks_24h);
+    set('gStatIPs',      d.unique_sources_24h);
+    set('gStatCountries',d.countries_24h);
+    set('gStatHigh',     d.high_severity_24h);
+    set('gStatMalware',  d.files_24h);
+    set('gStatML',       d.ml_anomalies);
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+//  WEBSOCKET
+// ══════════════════════════════════════════════════════════════
+let ws;
+function connectWS() {
+  const url = API_BASE.replace('http','ws') + '/ws?token=' + encodeURIComponent(token);
+  ws = new WebSocket(url);
+  ws.onopen  = () => { const el=document.getElementById('gWsStatus'); el.className='badge badge-success'; el.textContent='WS Live'; };
+  ws.onclose = () => { const el=document.getElementById('gWsStatus'); el.className='badge badge-danger'; el.textContent='WS Offline'; setTimeout(connectWS, 4000); };
+  ws.onerror = () => ws.close();
+  ws.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'new_event')        onLiveEvent(msg.data);
+      if (msg.type === 'enrichment_update') onEnrichment(msg.data);
+    } catch(_) {}
+  };
+}
+
+function onLiveEvent(ev) {
+  if (ev.lat && ev.lng) {
+    fireArc(ev.lat, ev.lng, ev.severity||'low', `${ev.country||ev.src_ip} → Honeypot (${ev.attack_type||'?'})`);
+  } else if (ipGeoCache[ev.src_ip]) {
+    const g = ipGeoCache[ev.src_ip];
+    fireArc(g.lat, g.lng, ev.severity||'low', `${g.country||ev.src_ip} → Honeypot`);
+  }
+}
+
+function onEnrichment(data) {
+  if (!data.lat || !data.lng) return;
+  ipGeoCache[data.src_ip] = { lat:data.lat, lng:data.lng, country:data.country };
+  const exists = globePoints.some(p => p.lat===data.lat && p.lng===data.lng && p.color==='#ff4444');
+  if (!exists) {
+    globePoints = [...globePoints, { lat:data.lat, lng:data.lng, size:0.22, color:'#ff4444', label:`🔴 ${data.country||data.src_ip}` }];
+    globeInstance.pointsData(globePoints);
+  }
+  fireArc(data.lat, data.lng, data.severity||'low', `${data.country||data.src_ip} → Honeypot`);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+$(document).ready(function() {
+  // Auth
+  try {
+    const pl = JSON.parse(atob(token.split('.')[1]));
+    document.getElementById('sidebarUsername').textContent = pl.sub || 'Analyst';
+    if (pl.role === 'admin') document.getElementById('usersNavItem').style.display = '';
+  } catch(_) {}
+
+  document.getElementById('logoutBtn').addEventListener('click', e => {
+    e.preventDefault(); localStorage.removeItem('hd_token'); window.location.href = 'login.html';
+  });
+
+  initGlobe();
+  loadMapData();
+  loadStats();
+  connectWS();
+
+  setInterval(() => { loadMapData(); loadStats(); }, 60000);
+});
+</script>
+</body>
+</html>

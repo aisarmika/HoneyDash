@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HoneyDash | User Management</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="dist/css/adminlte.min.css">
+  <link rel="stylesheet" href="dist/css/dark-theme.css">
+  <link rel="stylesheet" href="enterprise.css">
+  <style>
+    .role-admin   { background:#dc3545; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; }
+    .role-analyst { background:#007bff; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; }
+    .role-viewer  { background:#6c757d; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; }
+    .status-active   { color:#28a745; font-weight:700; font-size:12px; }
+    .status-inactive { color:#dc3545; font-weight:700; font-size:12px; }
+  </style>
+</head>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-dark">
+    <ul class="navbar-nav">
+      <li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a></li>
+      <li class="nav-item d-none d-sm-inline-block"><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+    </ul>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item"><a class="nav-link" data-widget="fullscreen" href="#"><i class="fas fa-expand-arrows-alt"></i></a></li>
+      <li class="nav-item"><a class="nav-link" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></a></li>
+    </ul>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="#" class="brand-link">
+      <img src="dist/img/AdminLTELogo.png" alt="Logo" class="brand-image img-circle elevation-3">
+      <span class="brand-text font-weight-light">HoneyDash</span>
+    </a>
+    <div class="sidebar">
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image"><img src="dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User"></div>
+        <div class="info dropdown">
+          <a href="#" class="d-block dropdown-toggle" data-toggle="dropdown">
+            <span id="sidebarUsername">Admin</span>
+          </a>
+          <div class="dropdown-menu border-0 shadow-lg" style="background:#2d3748;min-width:190px;margin-top:4px">
+            <div class="px-3 py-2">
+              <div class="text-white-50 small">Logged in as</div>
+              <div class="text-white font-weight-bold text-truncate" id="sidebarFullEmail" style="max-width:155px">—</div>
+              <span class="badge badge-danger mt-1">admin</span>
+            </div>
+            <div class="dropdown-divider" style="border-color:#4a5568;margin:2px 0"></div>
+            <a class="dropdown-item" href="users.html" style="color:#e2e8f0">
+              <i class="fas fa-users mr-2 text-info"></i> User Management
+            </a>
+            <a class="dropdown-item" href="#" id="logoutBtnUser" style="color:#e2e8f0">
+              <i class="fas fa-sign-out-alt mr-2 text-danger"></i> Sign Out
+            </a>
+          </div>
+        </div>
+      </div>
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+          <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p></a></li>
+          <li class="nav-item"><a href="sessions.html" class="nav-link"><i class="nav-icon fas fa-list"></i><p>Attack Sessions</p></a></li>
+          <li class="nav-item"><a href="alerts.html" class="nav-link"><i class="nav-icon fas fa-exclamation-triangle"></i><p>Alerts</p></a></li>
+          <li class="nav-item"><a href="globe.html" class="nav-link"><i class="nav-icon fas fa-globe-asia" style="color:#00c8ff"></i><p style="color:#00c8ff">3D Attack Globe</p></a></li>
+          <li class="nav-item"><a href="reports.html" class="nav-link"><i class="nav-icon fas fa-chart-bar"></i><p>Reports</p></a></li>
+          <li class="nav-item"><a href="configuration.html" class="nav-link"><i class="nav-icon fas fa-cog"></i><p>Configuration</p></a></li>
+          <li class="nav-item"><a href="users.html" class="nav-link active"><i class="nav-icon fas fa-users"></i><p>Users</p></a></li>
+        </ul>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <div class="content-wrapper">
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6"><h1 class="m-0">User Management</h1></div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="dashboard.html">Home</a></li>
+              <li class="breadcrumb-item active">Users</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="content">
+      <div class="container-fluid">
+
+        <!-- Stats row -->
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <div class="info-box">
+              <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-users"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Total Users</span>
+                <span class="info-box-number" id="statTotal">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box">
+              <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-user-shield"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Admins</span>
+                <span class="info-box-number" id="statAdmins">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box">
+              <span class="info-box-icon bg-primary elevation-1"><i class="fas fa-user-tie"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Analysts</span>
+                <span class="info-box-number" id="statAnalysts">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box">
+              <span class="info-box-icon bg-secondary elevation-1"><i class="fas fa-eye"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Viewers</span>
+                <span class="info-box-number" id="statViewers">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Table Card -->
+        <div class="card card-primary card-outline">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-users mr-1"></i>System Users</h3>
+            <div class="card-tools">
+              <button class="btn btn-success btn-sm" onclick="openAddModal()">
+                <i class="fas fa-plus mr-1"></i>Add User
+              </button>
+              <button class="btn btn-tool" onclick="loadUsers()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <table class="table table-sm table-striped mb-0">
+              <thead>
+                <tr>
+                  <th style="width:40px">#</th>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th style="width:120px">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <tr><td colspan="7" class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Role Guide Card -->
+        <div class="card card-secondary card-outline">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-info-circle mr-1"></i>Role Permissions</h3>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4">
+                <h6><span class="role-admin">ADMIN</span></h6>
+                <ul class="text-muted small">
+                  <li>Full system access</li>
+                  <li>User management (create, edit, delete)</li>
+                  <li>System configuration</li>
+                  <li>Data retention settings</li>
+                  <li>All analyst capabilities</li>
+                </ul>
+              </div>
+              <div class="col-md-4">
+                <h6><span class="role-analyst">ANALYST</span></h6>
+                <ul class="text-muted small">
+                  <li>View dashboard &amp; live feed</li>
+                  <li>Inspect attack sessions</li>
+                  <li>Configure personal alert rules</li>
+                  <li>View &amp; acknowledge alerts</li>
+                  <li>Generate &amp; export reports</li>
+                </ul>
+              </div>
+              <div class="col-md-4">
+                <h6><span class="role-viewer">VIEWER</span></h6>
+                <ul class="text-muted small">
+                  <li>Read-only dashboard access</li>
+                  <li>Public dashboard only</li>
+                  <li>No configuration access</li>
+                  <li>No alert management</li>
+                  <li>Anonymised data only</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <footer class="main-footer">
+    <strong>HoneyDash SOC Platform</strong> <span style="color:#6e7681">— Cowrie · Dionaea · Remote Sensors · ML Anomaly Detection</span>
+  </footer>
+</div>
+
+<!-- Add / Edit User Modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-dark">
+        <h5 class="modal-title" id="userModalTitle">Add User</h5>
+        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editUserId">
+        <div class="form-group">
+          <label>Email <span class="text-danger">*</span></label>
+          <input type="email" class="form-control" id="userEmail" placeholder="analyst@honeydash.local">
+        </div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" class="form-control" id="userFullName" placeholder="John Smith">
+        </div>
+        <div class="form-group">
+          <label>Role <span class="text-danger">*</span></label>
+          <select class="form-control" id="userRole">
+            <option value="analyst">Analyst</option>
+            <option value="admin">Admin</option>
+            <option value="viewer">Viewer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label id="passwordLabel">Password <span class="text-danger">*</span></label>
+          <input type="password" class="form-control" id="userPassword" placeholder="••••••••">
+          <small class="text-muted" id="passwordHint" style="display:none">Leave blank to keep current password</small>
+        </div>
+        <div class="form-group" id="activeToggleGroup" style="display:none">
+          <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="userActive" checked>
+            <label class="custom-control-label" for="userActive">Account Active</label>
+          </div>
+        </div>
+        <div id="userModalError" class="alert alert-danger" style="display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="userModalSaveBtn" onclick="saveUser()">
+          <i class="fas fa-save mr-1"></i>Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-danger">
+        <h5 class="modal-title text-white"><i class="fas fa-trash mr-1"></i>Delete User</h5>
+        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong id="deleteUserName"></strong>?</p>
+        <p class="text-muted small">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="plugins/jquery/jquery.min.js"></script>
+<script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="dist/js/adminlte.min.js"></script>
+<script src="config.js"></script>
+<script>
+const API_BASE = window._HD_API;
+const token = localStorage.getItem('hd_token');
+if (!token) window.location.href = 'login.html';
+
+function authHeaders() {
+  return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+}
+async function apiFetch(path, opts) {
+  const r = await fetch(API_BASE + path, { headers: authHeaders(), ...opts });
+  if (r.status === 401) { localStorage.removeItem('hd_token'); window.location.href = 'login.html'; }
+  return r;
+}
+
+// Check admin role
+try {
+  const p = JSON.parse(atob(token.split('.')[1]));
+  if (p.sub) {
+    document.getElementById('sidebarUsername').textContent = p.sub.split('@')[0];
+    document.getElementById('sidebarFullEmail').textContent = p.sub;
+  }
+  if (p.role !== 'admin') {
+    alert('Access denied: User Management requires Admin role.');
+    window.location.href = 'dashboard.html';
+  }
+} catch(e) { window.location.href = 'login.html'; }
+
+let allUsers = [];
+let myUserId = null;
+
+function roleBadge(role) {
+  return `<span class="role-${role}">${role.toUpperCase()}</span>`;
+}
+
+function statusBadge(active) {
+  return active
+    ? '<span class="status-active"><i class="fas fa-circle mr-1" style="font-size:8px"></i>Active</span>'
+    : '<span class="status-inactive"><i class="fas fa-circle mr-1" style="font-size:8px"></i>Inactive</span>';
+}
+
+async function loadUsers() {
+  try {
+    // Get own info first to know our ID
+    const meR = await apiFetch('/api/users/me');
+    if (meR.ok) {
+      const me = await meR.json();
+      myUserId = me.id;
+    }
+
+    const r = await apiFetch('/api/users');
+    if (!r.ok) { document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="7" class="text-center text-danger py-3">Failed to load users</td></tr>'; return; }
+    allUsers = await r.json();
+
+    // Update stats
+    document.getElementById('statTotal').textContent = allUsers.length;
+    document.getElementById('statAdmins').textContent = allUsers.filter(u => u.role === 'admin').length;
+    document.getElementById('statAnalysts').textContent = allUsers.filter(u => u.role === 'analyst').length;
+    document.getElementById('statViewers').textContent = allUsers.filter(u => u.role === 'viewer').length;
+
+    const tbody = document.getElementById('usersTableBody');
+    if (!allUsers.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No users found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = allUsers.map((u, i) => {
+      const isSelf = u.id === myUserId;
+      const created = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
+      return `<tr>
+        <td>${u.id}</td>
+        <td><strong>${escHtml(u.full_name || '—')}</strong>${isSelf ? ' <span class="badge badge-warning" style="font-size:9px">You</span>' : ''}</td>
+        <td style="font-size:12px"><code>${escHtml(u.email)}</code></td>
+        <td>${roleBadge(u.role)}</td>
+        <td>${statusBadge(u.is_active)}</td>
+        <td style="font-size:11px;color:#6c757d">${created}</td>
+        <td>
+          <button class="btn btn-xs btn-info py-0 px-1 mr-1" onclick="openEditModal(${u.id})" title="Edit"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-xs btn-danger py-0 px-1" onclick="openDeleteModal(${u.id}, '${escHtml(u.full_name || u.email)}')" ${isSelf ? 'disabled title="Cannot delete own account"' : 'title="Delete"'}><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" class="text-center text-danger py-3">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function openAddModal() {
+  document.getElementById('userModalTitle').textContent = 'Add New User';
+  document.getElementById('editUserId').value = '';
+  document.getElementById('userEmail').value = '';
+  document.getElementById('userEmail').disabled = false;
+  document.getElementById('userFullName').value = '';
+  document.getElementById('userRole').value = 'analyst';
+  document.getElementById('userPassword').value = '';
+  document.getElementById('userPassword').required = true;
+  document.getElementById('passwordLabel').innerHTML = 'Password <span class="text-danger">*</span>';
+  document.getElementById('passwordHint').style.display = 'none';
+  document.getElementById('activeToggleGroup').style.display = 'none';
+  document.getElementById('userModalError').style.display = 'none';
+  $('#userModal').modal('show');
+}
+
+function openEditModal(userId) {
+  const u = allUsers.find(x => x.id === userId);
+  if (!u) return;
+  document.getElementById('userModalTitle').textContent = 'Edit User';
+  document.getElementById('editUserId').value = userId;
+  document.getElementById('userEmail').value = u.email;
+  document.getElementById('userEmail').disabled = true;
+  document.getElementById('userFullName').value = u.full_name || '';
+  document.getElementById('userRole').value = u.role;
+  document.getElementById('userPassword').value = '';
+  document.getElementById('userPassword').required = false;
+  document.getElementById('passwordLabel').innerHTML = 'New Password';
+  document.getElementById('passwordHint').style.display = '';
+  document.getElementById('activeToggleGroup').style.display = '';
+  document.getElementById('userActive').checked = u.is_active;
+  document.getElementById('userModalError').style.display = 'none';
+  $('#userModal').modal('show');
+}
+
+async function saveUser() {
+  const errEl = document.getElementById('userModalError');
+  errEl.style.display = 'none';
+  const userId = document.getElementById('editUserId').value;
+  const isEdit = !!userId;
+
+  const email    = document.getElementById('userEmail').value.trim();
+  const fullName = document.getElementById('userFullName').value.trim();
+  const role     = document.getElementById('userRole').value;
+  const password = document.getElementById('userPassword').value;
+  const isActive = document.getElementById('userActive').checked;
+
+  if (!isEdit && !email) { errEl.textContent = 'Email is required'; errEl.style.display = ''; return; }
+  if (!isEdit && !password) { errEl.textContent = 'Password is required for new users'; errEl.style.display = ''; return; }
+
+  const btn = document.getElementById('userModalSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Saving…';
+
+  try {
+    let r;
+    if (isEdit) {
+      const body = { role, is_active: isActive };
+      if (fullName) body.full_name = fullName;
+      if (password) body.password = password;
+      r = await apiFetch('/api/users/' + userId, { method: 'PUT', body: JSON.stringify(body) });
+    } else {
+      const body = { email, role };
+      if (fullName) body.full_name = fullName;
+      body.password = password;
+      r = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify(body) });
+    }
+
+    if (r.ok) {
+      $('#userModal').modal('hide');
+      await loadUsers();
+    } else {
+      const err = await r.json().catch(() => ({ detail: 'Unknown error' }));
+      errEl.textContent = err.detail || 'Failed to save user';
+      errEl.style.display = '';
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error: ' + e.message;
+    errEl.style.display = '';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save mr-1"></i>Save';
+  }
+}
+
+let pendingDeleteId = null;
+function openDeleteModal(userId, name) {
+  pendingDeleteId = userId;
+  document.getElementById('deleteUserName').textContent = name;
+  $('#deleteModal').modal('show');
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+  if (!pendingDeleteId) return;
+  const btn = document.getElementById('confirmDeleteBtn');
+  btn.disabled = true; btn.textContent = 'Deleting…';
+  try {
+    const r = await apiFetch('/api/users/' + pendingDeleteId, { method: 'DELETE' });
+    if (r.ok || r.status === 204) {
+      $('#deleteModal').modal('hide');
+      await loadUsers();
+    } else {
+      const err = await r.json().catch(() => ({ detail: 'Unknown error' }));
+      alert('Delete failed: ' + (err.detail || 'Unknown error'));
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = 'Delete'; pendingDeleteId = null; }
+});
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const _doLogout = () => { localStorage.removeItem('hd_token'); window.location.href = 'login.html'; };
+document.getElementById('logoutBtn').addEventListener('click', _doLogout);
+document.getElementById('logoutBtnUser').addEventListener('click', _doLogout);
+
+// Load on startup
+loadUsers();
+</script>
+</body>
+</html>

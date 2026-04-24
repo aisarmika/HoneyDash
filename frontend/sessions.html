@@ -13,36 +13,14 @@
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <!-- Theme style -->
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="dist/css/dark-theme.css">
+    <link rel="stylesheet" href="enterprise.css">
     <!-- DataTables -->
     <link rel="stylesheet" href="plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
     <style>
-        .badge-high {
-            background-color: #dc3545;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-        }
-
-        .badge-medium {
-            background-color: #ffc107;
-            color: black;
-            padding: 3px 8px;
-            border-radius: 4px;
-        }
-
-        .badge-low {
-            background-color: #17a2b8;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-        }
-
-        .session-detail pre {
-            background-color: #f4f4f4;
-            padding: 10px;
-            border-radius: 4px;
-        }
+        .session-detail pre { background-color: #1c2333; padding: 10px; border-radius: 4px; color: #c9d1d9; }
+        #attack-map { height:200px; width:100%; border-radius:4px; }
     </style>
 </head>
 
@@ -50,7 +28,7 @@
     <div class="wrapper">
 
         <!-- Navbar (same as dashboard) -->
-        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <nav class="main-header navbar navbar-expand navbar-dark">
             <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
@@ -88,8 +66,24 @@
                     <div class="image">
                         <img src="dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User">
                     </div>
-                    <div class="info">
-                        <a href="#" class="d-block">Security Analyst</a>
+                    <div class="info dropdown">
+                        <a href="#" class="d-block dropdown-toggle" data-toggle="dropdown">
+                            <span id="sidebarUsername">Analyst</span>
+                        </a>
+                        <div class="dropdown-menu border-0 shadow-lg" style="background:#2d3748;min-width:190px;margin-top:4px">
+                            <div class="px-3 py-2">
+                                <div class="text-white-50 small">Logged in as</div>
+                                <div class="text-white font-weight-bold text-truncate" id="sidebarFullEmail" style="max-width:155px">—</div>
+                                <span id="sidebarRoleBadge" class="badge badge-danger mt-1">admin</span>
+                            </div>
+                            <div class="dropdown-divider" style="border-color:#4a5568;margin:2px 0"></div>
+                            <a class="dropdown-item" href="users.html" id="userMgmtLink" style="display:none;color:#e2e8f0">
+                                <i class="fas fa-users mr-2 text-info"></i> User Management
+                            </a>
+                            <a class="dropdown-item" href="#" id="logoutBtnUser" style="color:#e2e8f0">
+                                <i class="fas fa-sign-out-alt mr-2 text-danger"></i> Sign Out
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <nav class="mt-2">
@@ -114,6 +108,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a href="globe.html" class="nav-link">
+                                <i class="nav-icon fas fa-globe-asia" style="color:#00c8ff"></i>
+                                <p style="color:#00c8ff">3D Attack Globe</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="reports.html" class="nav-link">
                                 <i class="nav-icon fas fa-chart-bar"></i>
                                 <p>Reports</p>
@@ -125,6 +125,7 @@
                                 <p>Configuration</p>
                             </a>
                         </li>
+                        <li class="nav-item" id="usersNavItem" style="display:none"><a href="users.html" class="nav-link"><i class="nav-icon fas fa-users"></i><p>Users</p></a></li>
                     </ul>
                 </nav>
             </div>
@@ -157,7 +158,7 @@
                     <div class="row">
                         <div class="col-md-3 col-sm-6 col-12">
                             <div class="info-box">
-                                <span class="info-box-icon bg-info"><i class="far fa-clock"></i></span>
+                                <span class="info-box-icon bg-info elevation-1"><i class="fas fa-layer-group"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Total Sessions</span>
                                     <span class="info-box-number" id="statTotalSessions">-</span>
@@ -166,7 +167,7 @@
                         </div>
                         <div class="col-md-3 col-sm-6 col-12">
                             <div class="info-box">
-                                <span class="info-box-icon bg-success"><i class="fas fa-flag"></i></span>
+                                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-globe"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Countries</span>
                                     <span class="info-box-number" id="statCountries">-</span>
@@ -175,7 +176,7 @@
                         </div>
                         <div class="col-md-3 col-sm-6 col-12">
                             <div class="info-box">
-                                <span class="info-box-icon bg-warning"><i class="fas fa-terminal"></i></span>
+                                <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-stopwatch"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Avg Duration</span>
                                     <span class="info-box-number" id="statAvgDur">-</span>
@@ -184,7 +185,7 @@
                         </div>
                         <div class="col-md-3 col-sm-6 col-12">
                             <div class="info-box">
-                                <span class="info-box-icon bg-danger"><i class="fas fa-skull-crosswalk"></i></span>
+                                <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-skull-crossbones"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">High Risk</span>
                                     <span class="info-box-number" id="statHighRisk">-</span>
@@ -194,114 +195,165 @@
                     </div>
 
                     <!-- Filter Card -->
-                    <div class="card card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">Filter Sessions</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Date Range</label>
-                                        <select class="form-control">
-                                            <option>Last 24 Hours</option>
-                                            <option selected>Last 7 Days</option>
-                                            <option>Last 30 Days</option>
-                                            <option>Custom Range</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Attack Type</label>
-                                        <select class="form-control">
-                                            <option>All Types</option>
-                                            <option>SSH</option>
-                                            <option>HTTP</option>
-                                            <option>FTP</option>
-                                            <option>Telnet</option>
-                                            <option>MySQL</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Severity</label>
-                                        <select class="form-control">
-                                            <option>All</option>
-                                            <option>High</option>
-                                            <option>Medium</option>
-                                            <option>Low</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Country</label>
-                                        <select class="form-control">
-                                            <option>All Countries</option>
-                                            <option>Russia</option>
-                                            <option>China</option>
-                                            <option>USA</option>
-                                            <option>Brazil</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Search IP/Host</label>
-                                        <input type="text" class="form-control" placeholder="Enter IP address">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-12">
-                                    <button class="btn btn-primary float-right">
-                                        <i class="fas fa-search"></i> Apply Filters
-                                    </button>
-                                    <button class="btn btn-default float-right mr-2">
-                                        <i class="fas fa-redo"></i> Reset
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-filter mr-1"></i>Filter &amp; Search</h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label><i class="fas fa-search mr-1"></i>Full-Text Search</label>
+                    <input type="text" id="fSearch" class="form-control" placeholder="IP, username, command…" onkeydown="if(event.key==='Enter')applyFilters()">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label>Severity</label>
+                    <select id="fSeverity" class="form-control">
+                        <option value="">All Severities</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label>Protocol</label>
+                    <select id="fProtocol" class="form-control">
+                        <option value="">All Protocols</option>
+                        <optgroup label="── Cowrie ──────────">
+                            <option value="ssh">SSH</option>
+                            <option value="telnet">Telnet</option>
+                        </optgroup>
+                        <optgroup label="── Dionaea ─────────">
+                            <option value="http">HTTP</option>
+                            <option value="https">HTTPS</option>
+                            <option value="smb">SMB</option>
+                            <option value="ftp">FTP</option>
+                            <option value="mysql">MySQL</option>
+                            <option value="mssql">MSSQL</option>
+                            <option value="sip">SIP/VoIP</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label>Sensor</label>
+                    <select id="fSensor" class="form-control">
+                        <option value="">All Sensors</option>
+                        <optgroup label="── Local ───────────">
+                            <option value="cowrie-01">cowrie-01 (SSH/Telnet)</option>
+                            <option value="dionaea-01">dionaea-01 (Services)</option>
+                        </optgroup>
+                        <optgroup label="── Remote ──────────">
+                            <option value="remote">Remote / Friend's Sensor</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <div class="form-group">
+                    <label>From</label>
+                    <input type="date" id="fStart" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-1">
+                <div class="form-group">
+                    <label>To</label>
+                    <input type="date" id="fEnd" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-1">
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary btn-block" onclick="applyFilters()"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group mb-0">
+                    <label>Attack Type</label>
+                    <select id="fType" class="form-control">
+                        <option value="">All Types</option>
+                        <optgroup label="── Cowrie (SSH/Telnet) ──">
+                            <option value="SSH Connect">SSH Connect</option>
+                            <option value="SSH Brute Force">SSH Brute Force</option>
+                            <option value="SSH Login">SSH Login</option>
+                            <option value="Command Execution">Command Execution</option>
+                            <option value="Malware Download">Malware Download</option>
+                            <option value="Telnet Connect">Telnet Connect</option>
+                            <option value="Telnet Brute Force">Telnet Brute Force</option>
+                        </optgroup>
+                        <optgroup label="── Dionaea (Services) ───">
+                            <option value="HTTP Exploit">HTTP Exploit</option>
+                            <option value="SMB Exploit">SMB Exploit (EternalBlue)</option>
+                            <option value="FTP Brute Force">FTP Brute Force</option>
+                            <option value="MySQL Probe">MySQL Probe</option>
+                            <option value="MSSQL Probe">MSSQL Probe</option>
+                            <option value="SIP Scan">SIP/VoIP Scan</option>
+                            <option value="Malware Capture">Malware Capture</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-9 d-flex align-items-end justify-content-end">
+                <button class="btn btn-secondary btn-sm" onclick="resetFilters()">
+                    <i class="fas fa-redo mr-1"></i>Reset Filters
+                </button>
+                <span id="filterStatus" class="text-muted ml-3" style="font-size:12px;line-height:31px"></span>
+            </div>
+        </div>
+    </div>
+</div>
 
                     <!-- Sessions Table -->
-                    <div class="card card-primary card-outline">
-                        <div class="card-header">
-                            <h3 class="card-title">Session List</h3>
-                            <div class="card-tools">
-                                <button class="btn btn-success btn-sm" onclick="exportSessions()">
-                                    <i class="fas fa-download"></i> Export
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <table id="sessionsTable" class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Session ID</th>
-                                        <th>Timestamp</th>
-                                        <th>Source IP</th>
-                                        <th>Country</th>
-                                        <th>Attack Type</th>
-                                        <th>Target Port</th>
-                                        <th>Duration</th>
-                                        <th>Events</th>
-                                        <th>Severity</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sessionsTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-list mr-1"></i>Session List</h3>
+        <div class="card-tools">
+            <span id="liveIndicator" style="margin-right:8px">
+                <span class="live-dot"></span>
+                <span style="font-size:11px;color:#8b949e;margin-left:4px">LIVE</span>
+            </span>
+            <button class="btn btn-success btn-sm" onclick="exportSessions('csv')">
+                <i class="fas fa-download mr-1"></i>Export CSV
+            </button>
+            <button class="btn btn-secondary btn-sm ml-1" onclick="exportSessions('json')">
+                <i class="fas fa-code mr-1"></i>JSON
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table id="sessionsTable" class="table table-bordered table-hover table-sm mb-0">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Timestamp</th>
+                    <th>Source IP</th>
+                    <th>Country</th>
+                    <th>Sensor</th>
+                    <th>Protocol</th>
+                    <th>Attack Type</th>
+                    <th>Port</th>
+                    <th>Duration</th>
+                    <th>Attempts</th>
+                    <th>Cmds</th>
+                    <th>Files</th>
+                    <th>Severity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="sessionsTableBody"></tbody>
+        </table>
+    </div>
+</div>
 
                     <!-- Session Detail Modal -->
                     <div class="modal fade" id="sessionDetailModal">
@@ -401,6 +453,9 @@
                                     </div>
                                 </div>
                                 <div class="modal-footer">
+                                    <button class="btn btn-info" id="attackerProfileBtn" onclick="viewAttackerProfile()">
+                                        <i class="fas fa-user-secret"></i> Attacker Profile
+                                    </button>
                                     <button class="btn btn-warning" id="blockIPBtn" onclick="blockIP()">
                                         <i class="fas fa-ban"></i> Block IP
                                     </button>
@@ -451,7 +506,7 @@
 
         <!-- Footer -->
         <footer class="main-footer">
-            <strong>HoneyDash v1.0 - Real-Time Honeypot Visualization & Alerting</strong>
+            <strong>HoneyDash SOC Platform</strong> <span style="color:#6e7681">— Cowrie · Dionaea · Remote Sensors · ML Anomaly Detection</span>
         </footer>
     </div>
 
@@ -461,9 +516,11 @@
     <script src="plugins/datatables/jquery.dataTables.min.js"></script>
     <script src="plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script src="dist/js/adminlte.min.js"></script>
+    <script src="config.js"></script>
 
     <script>
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = window._HD_API;
+        const WS_URL   = window._HD_WS;
 
         // Auth guard
         const token = localStorage.getItem('hd_token');
@@ -483,25 +540,86 @@
             return `<span class="badge badge-${sev}">${sev.charAt(0).toUpperCase()+sev.slice(1)}</span>`;
         }
 
+        const PROTO_COLOR = {
+            SSH:'#17a2b8',TELNET:'#6c757d',HTTP:'#fd7e14',HTTPS:'#e83e8c',
+            SMB:'#dc3545',FTP:'#6f42c1',MYSQL:'#28a745',MSSQL:'#007bff',SIP:'#20c997'
+        };
+        function protoBadge(p) {
+            const lbl = (p||'ssh').toUpperCase();
+            const bg  = PROTO_COLOR[lbl] || '#495057';
+            return `<span style="background:${bg};color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">${lbl}</span>`;
+        }
+        function mlBadge(isAnomaly, score) {
+            if (!isAnomaly) return '';
+            const tip = score != null ? ` title="Anomaly score: ${score.toFixed(3)}"` : '';
+            return ` <span${tip} style="background:rgba(124,58,237,0.18);color:#a78bfa;border:1px solid rgba(124,58,237,0.4);padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700;cursor:help">ML</span>`;
+        }
+
+        const MITRE_MAP = {
+            'SSH Brute Force':         { id:'T1110.001', name:'Brute Force: Password Guessing',   tactic:'Credential Access', color:'#e74c3c' },
+            'SSH Login':               { id:'T1078',     name:'Valid Accounts',                    tactic:'Initial Access',    color:'#c0392b' },
+            'Command Execution':       { id:'T1059',     name:'Command & Scripting Interpreter',   tactic:'Execution',         color:'#e67e22' },
+            'Malware Download':        { id:'T1105',     name:'Ingress Tool Transfer',             tactic:'Command & Control', color:'#8e44ad' },
+            'SSH Connect':             { id:'T1021.004', name:'Remote Services: SSH',              tactic:'Lateral Movement',  color:'#2980b9' },
+            'HTTP Exploit':            { id:'T1190',     name:'Exploit Public-Facing Application', tactic:'Initial Access',    color:'#c0392b' },
+            'HTTPS Exploit':           { id:'T1190',     name:'Exploit Public-Facing Application', tactic:'Initial Access',    color:'#c0392b' },
+            'SMB/EternalBlue Exploit': { id:'T1210',     name:'Exploitation of Remote Services',   tactic:'Lateral Movement',  color:'#e74c3c' },
+            'FTP Brute Force':         { id:'T1110.001', name:'Brute Force: Password Guessing',   tactic:'Credential Access', color:'#e74c3c' },
+            'MySQL Brute Force':       { id:'T1110.001', name:'Brute Force: Password Guessing',   tactic:'Credential Access', color:'#e74c3c' },
+            'MSSQL Brute Force':       { id:'T1110.001', name:'Brute Force: Password Guessing',   tactic:'Credential Access', color:'#e74c3c' },
+            'SIP Scanning':            { id:'T1046',     name:'Network Service Discovery',         tactic:'Discovery',         color:'#27ae60' },
+            'Telnet Attack':           { id:'T1021.005', name:'Remote Services: VNC',             tactic:'Lateral Movement',  color:'#2980b9' },
+        };
+        function mitreBadge(attackType) {
+            const m = MITRE_MAP[attackType];
+            if (!m) return '';
+            const r = parseInt(m.color.slice(1,3),16), g = parseInt(m.color.slice(3,5),16), b = parseInt(m.color.slice(5,7),16);
+            return ` <span title="${m.id} · ${m.name}&#10;Tactic: ${m.tactic}"
+                style="background:rgba(${r},${g},${b},0.15);color:${m.color};
+                border:1px solid rgba(${r},${g},${b},0.4);border-radius:3px;
+                padding:1px 5px;font-size:9px;font-weight:700;font-family:monospace;
+                cursor:help;white-space:nowrap">${m.id}</span>`;
+        }
+
+        // Country code → flag emoji
+        function countryFlag(code) {
+            if (!code || code.length !== 2) return '';
+            const flag = code.toUpperCase().replace(/./g, c =>
+                String.fromCodePoint(127397 + c.charCodeAt(0)));
+            return flag + ' ';
+        }
+
         function buildRow(s) {
             const ts = s.start_time ? new Date(s.start_time).toLocaleString() : '-';
-            const country = s.country || '-';
-            return `<tr>
-                <td><code style="font-size:11px">${s.session_id}</code></td>
-                <td>${ts}</td>
+            const flag = countryFlag(s.country_code);
+            const country = flag + (s.country || '-');
+            // Sensor badge
+            let sensorKey = (s.sensor || '').toLowerCase();
+            let sensorClass = sensorKey.includes('cowrie') ? 'sensor-cowrie'
+                            : sensorKey.includes('dionaea') ? 'sensor-dionaea'
+                            : sensorKey ? 'sensor-remote' : 'sensor-unknown';
+            const sensorLabel = s.sensor || '-';
+            const sensorBadge = `<span class="sensor-badge ${sensorClass}">${sensorLabel}</span>`;
+            return `<tr data-session="${s.session_id}">
+                <td><code style="font-size:10px">${s.session_id.substring(0,12)}…</code></td>
+                <td class="col-nowrap" style="font-size:11px">${ts}</td>
                 <td><code>${s.src_ip}</code></td>
-                <td>${country}</td>
-                <td>${s.attack_type || '-'}</td>
+                <td class="country-cell" style="font-size:11px">${country}</td>
+                <td>${sensorBadge}</td>
+                <td>${protoBadge(s.protocol || 'ssh')}</td>
+                <td style="font-size:11px">${s.attack_type || '-'}${mitreBadge(s.attack_type)}</td>
                 <td>${s.dst_port || '-'}</td>
-                <td>${s.duration_display || '-'}</td>
+                <td style="font-size:11px">${s.duration_display || '-'}</td>
                 <td>${s.login_attempts || 0}</td>
-                <td>${sevBadge(s.severity || 'low')}</td>
-                <td>
+                <td>${s.commands_run || 0}</td>
+                <td>${s.files_downloaded || 0}</td>
+                <td>${sevBadge(s.severity || 'low')}${mlBadge(s.is_anomaly, s.anomaly_score)}</td>
+                <td style="white-space:nowrap">
                     <button class="btn btn-xs btn-info" onclick="viewSession('${s.session_id}')">
-                        <i class="fas fa-eye"></i> View
+                        <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn btn-xs btn-warning" onclick="showRemediation()">
-                        <i class="fas fa-shield-alt"></i>
+                    <button class="btn btn-xs btn-secondary" onclick="viewAttackerProfile('${s.src_ip}')">
+                        <i class="fas fa-user-secret"></i>
                     </button>
                 </td>
             </tr>`;
@@ -509,7 +627,77 @@
 
         var sessionsTable;
 
+        // WebSocket for real-time session prepend
+        let ws = null, wsReconnectDelay = 1000;
+
+        function connectWebSocket() {
+            ws = new WebSocket(WS_URL + '?token=' + encodeURIComponent(token));
+            ws.onopen  = function () { wsReconnectDelay = 1000; };
+            ws.onmessage = function (e) {
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'new_event' && msg.data.event_id === 'cowrie.session.connect') {
+                    // New session — build a minimal session object and prepend
+                    const ev = msg.data;
+                    const pseudo = {
+                        session_id: ev.session_id,
+                        start_time: ev.timestamp,
+                        src_ip: ev.src_ip,
+                        country: ev.country || null,
+                        country_code: ev.country_code || null,
+                        attack_type: ev.attack_type || 'SSH Connect',
+                        dst_port: ev.dst_port || 22,
+                        duration_display: '-',
+                        login_attempts: 0,
+                        severity: ev.severity || 'low',
+                    };
+                    sessionsTable.row.add($(buildRow(pseudo))[0]).draw(false);
+                    // Update total count
+                    const cur = parseInt($('#statTotalSessions').text().replace(/,/g,'')) || 0;
+                    $('#statTotalSessions').text((cur + 1).toLocaleString());
+                }
+                if (msg.type === 'enrichment_update') {
+                    const flag = countryFlag(msg.data.country_code);
+                    $('tr[data-session] .country-cell').filter(function () {
+                        return $(this).closest('tr').find('code').text() === msg.data.src_ip ||
+                               $(this).closest('tr').data('ip') === msg.data.src_ip;
+                    }).text(flag + (msg.data.country || '-'));
+                }
+            };
+            ws.onclose = function () {
+                setTimeout(connectWebSocket, wsReconnectDelay);
+                wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000);
+            };
+            ws.onerror = function () { ws.close(); };
+        }
+
+        // ── Logout helper ───────────────────────────────────────────────────────
+        const _doLogout = () => {
+            localStorage.removeItem('hd_token');
+            window.location.href = 'login.html';
+        };
+
         $(document).ready(function () {
+            // Populate sidebar user panel from JWT
+            try {
+                const p = JSON.parse(atob(token.split('.')[1]));
+                if (p.sub) {
+                    document.getElementById('sidebarUsername').textContent = p.sub.split('@')[0];
+                    document.getElementById('sidebarFullEmail').textContent = p.sub;
+                }
+                if (p.role === 'admin') {
+                    document.getElementById('userMgmtLink').style.display = '';
+                    document.getElementById('usersNavItem').style.display = '';
+                    document.getElementById('sidebarRoleBadge').textContent = 'admin';
+                    document.getElementById('sidebarRoleBadge').className   = 'badge badge-danger mt-1';
+                } else {
+                    document.getElementById('sidebarRoleBadge').textContent = 'analyst';
+                    document.getElementById('sidebarRoleBadge').className   = 'badge badge-info mt-1';
+                }
+            } catch(e) {}
+
+            // Wire logout buttons
+            $('#logoutBtnUser').on('click', function(e) { e.preventDefault(); _doLogout(); });
+
             sessionsTable = $("#sessionsTable").DataTable({
                 responsive: true,
                 lengthChange: true,
@@ -521,27 +709,103 @@
             });
 
             loadSessions();
+            connectWebSocket();
         });
+
+        // ── Filter helpers ──────────────────────────────────────────────────────
+        function buildFilterQS() {
+            const params = new URLSearchParams({ limit: 500, offset: 0 });
+            const sev      = document.getElementById('fSeverity').value;
+            const type     = document.getElementById('fType').value;
+            const protocol = document.getElementById('fProtocol').value;
+            const sensor   = document.getElementById('fSensor').value;
+            const start    = document.getElementById('fStart').value;
+            const end      = document.getElementById('fEnd').value;
+            const ip       = document.getElementById('fSearch').value.trim();
+            if (sev)      params.set('severity',    sev);
+            if (type)     params.set('attack_type', type);
+            if (protocol) params.set('protocol',    protocol);
+            if (sensor)   params.set('src_ip',      '');   // sensor filtering handled client-side
+            if (start)    params.set('start',        start);
+            if (end)      params.set('end',          end);
+            if (ip && ip.match(/^\d/)) params.set('src_ip', ip);
+            return params.toString();
+        }
+
+        async function applyFilters() {
+            const q    = document.getElementById('fSearch').value.trim();
+            const isIP = q && q.match(/^\d/);
+
+            // If search term looks like text (not an IP), use /events/search
+            if (q && !isIP) {
+                try {
+                    document.getElementById('filterStatus').textContent = 'Searching…';
+                    const d = await apiFetch('/api/events/search?q=' + encodeURIComponent(q) + '&limit=200');
+                    // Group events by session_id and display
+                    const sessionSet = new Map();
+                    d.items.forEach(ev => {
+                        if (!sessionSet.has(ev.session_id)) {
+                            sessionSet.set(ev.session_id, {
+                                session_id: ev.session_id,
+                                start_time: ev.timestamp,
+                                src_ip: ev.src_ip,
+                                country: ev.country,
+                                country_code: ev.country_code,
+                                attack_type: ev.attack_type,
+                                dst_port: ev.dst_port,
+                                duration_display: '-',
+                                login_attempts: 0,
+                                severity: ev.severity,
+                            });
+                        }
+                    });
+                    sessionsTable.clear();
+                    sessionSet.forEach(s => sessionsTable.row.add($(buildRow(s))[0]));
+                    sessionsTable.draw();
+                    document.getElementById('filterStatus').textContent =
+                        `Found ${d.total} events across ${sessionSet.size} sessions matching "${q}"`;
+                } catch(e) { document.getElementById('filterStatus').textContent = 'Search failed'; }
+                return;
+            }
+
+            loadSessions();
+        }
+
+        function resetFilters() {
+            ['fSeverity','fType','fProtocol','fSensor','fStart','fEnd'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('fSearch').value = '';
+            document.getElementById('filterStatus').textContent = '';
+            loadSessions();
+        }
 
         async function loadSessions() {
             try {
-                const d = await apiFetch('/api/sessions?limit=100&offset=0');
+                const qs = buildFilterQS();
+                const d = await apiFetch('/api/sessions?' + qs);
                 sessionsTable.clear();
                 if (d.items && d.items.length > 0) {
                     d.items.forEach(s => sessionsTable.row.add($(buildRow(s))[0]));
-                    // Update stat boxes
-                    $('#statTotalSessions').text(d.total.toLocaleString());
-                    const countries = new Set(d.items.filter(s => s.country).map(s => s.country));
-                    $('#statCountries').text(countries.size);
-                    const highRisk = d.items.filter(s => s.severity === 'high').length;
-                    $('#statHighRisk').text(highRisk);
-                    const withDur = d.items.filter(s => s.duration_secs);
-                    if (withDur.length) {
-                        const avg = withDur.reduce((a, s) => a + s.duration_secs, 0) / withDur.length;
-                        $('#statAvgDur').text((avg / 60).toFixed(1) + ' min');
-                    }
                 }
                 sessionsTable.draw();
+                document.getElementById('filterStatus').textContent =
+                    d.total > 200 ? `Showing 200 of ${d.total} sessions` : '';
+
+                // Stats from live API
+                apiFetch('/api/dashboard/stats').then(stats => {
+                    $('#statTotalSessions').text((stats.total_sessions || 0).toLocaleString());
+                    $('#statCountries').text((stats.countries_24h || 0).toLocaleString());
+                    if (d.items) {
+                        const highRisk = d.items.filter(s => s.severity === 'high').length;
+                        $('#statHighRisk').text(highRisk);
+                        const withDur = d.items.filter(s => s.duration_secs);
+                        if (withDur.length) {
+                            const avg = withDur.reduce((a, s) => a + s.duration_secs, 0) / withDur.length;
+                            $('#statAvgDur').text((avg / 60).toFixed(1) + ' min');
+                        } else {
+                            $('#statAvgDur').text('-');
+                        }
+                    }
+                }).catch(() => {});
             } catch(e) {
                 console.error('Failed to load sessions', e);
             }
@@ -568,7 +832,7 @@
                 $('#detailCountry').text(s.country || '-');
                 $('#detailCity').text(s.city || '-');
                 $('#detailISP').text(s.isp || '-');
-                $('#detailAttackType').text(s.attack_type || '-');
+                $('#detailAttackType').html((s.attack_type || '-') + mitreBadge(s.attack_type));
                 $('#detailPort').text(s.dst_port || '-');
                 $('#detailDuration').text(s.duration_display || '-');
                 $('#detailEvents').text(d.events.length);
@@ -597,18 +861,49 @@
                     $('#detailCommands').text('No commands or downloads recorded.');
                 }
 
-                // Timeline
-                const tlHtml = d.events.map(e => {
-                    const t = e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : '';
-                    const icon = e.severity === 'high' ? 'bg-danger' : e.severity === 'medium' ? 'bg-warning' : 'bg-info';
-                    const label = e.event_id.replace('cowrie.', '');
-                    const extra = e.username ? ` (${e.username}/${e.password || ''})` : (e.command_input ? `: ${e.command_input.substring(0,40)}` : '');
-                    return `<li><i class="fa fa-clock ${icon}"></i> ${t} — ${label}${extra}</li>`;
-                }).join('');
-                $('#detailTimeline').html(tlHtml || '<li>No events</li>');
+                // Kill-chain timeline
+                const KC = {
+                    'cowrie.session.connect':      { stage: 'Reconnaissance',    cls: 'kc-recon',   icon: 'fa-satellite-dish', color: '#17a2b8' },
+                    'cowrie.login.failed':          { stage: 'Brute Force',       cls: 'kc-brute',   icon: 'fa-lock',          color: '#fd7e14' },
+                    'cowrie.login.success':         { stage: 'Initial Access',    cls: 'kc-access',  icon: 'fa-door-open',     color: '#dc3545' },
+                    'cowrie.command.input':         { stage: 'Execution',         cls: 'kc-exec',    icon: 'fa-terminal',      color: '#6610f2' },
+                    'cowrie.session.file_download': { stage: 'C2 / Delivery',    cls: 'kc-c2',      icon: 'fa-bug',           color: '#e83e8c' },
+                };
+                // Deduplicated kill chain stages bar
+                const stagesSeenOrdered = [];
+                const stagesSeen = new Set();
+                d.events.forEach(e => {
+                    const kc = KC[e.event_id];
+                    if (kc && !stagesSeen.has(kc.stage)) { stagesSeen.add(kc.stage); stagesSeenOrdered.push(kc); }
+                });
+                const kcBar = stagesSeenOrdered.map(kc =>
+                    `<span style="display:inline-flex;align-items:center;padding:4px 12px;border-radius:16px;font-size:11px;font-weight:600;margin:2px;background:rgba(0,0,0,.06);border:1px solid ${kc.color}20;color:${kc.color}">
+                        <i class="fas ${kc.icon} mr-1"></i>${kc.stage}
+                    </span>`).join('<span style="color:#ccc;margin:0 2px">→</span>');
 
-                // Store current IP for block button
+                const tlHtml = d.events.map(e => {
+                    const kc  = KC[e.event_id] || { icon: 'fa-circle', color: '#6c757d', stage: e.event_id.replace('cowrie.','') };
+                    const t   = e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : '';
+                    const extra = e.username    ? `<code style="font-size:11px">${e.username}${e.password ? '/' + e.password : ''}</code>`
+                                : e.command_input ? `<code style="font-size:11px">${e.command_input.substring(0,60)}</code>`
+                                : e.download_url  ? `<a href="${e.download_url}" target="_blank" class="text-danger" style="font-size:11px"><i class="fas fa-external-link-alt"></i> ${e.download_url.substring(0,50)}</a>`
+                                : '';
+                    return `<li style="margin-bottom:6px">
+                        <i class="fas ${kc.icon}" style="color:${kc.color};margin-right:6px"></i>
+                        <span style="color:#999;font-size:11px;margin-right:6px">${t}</span>
+                        <strong style="color:${kc.color};font-size:12px">${kc.stage}</strong>
+                        ${extra ? '<span class="mx-1 text-muted">—</span>' + extra : ''}
+                    </li>`;
+                }).join('');
+
+                $('#detailTimeline').html(
+                    (kcBar ? `<div style="margin-bottom:12px;padding:8px;background:#f8f9fa;border-radius:6px">${kcBar}</div>` : '') +
+                    `<ul style="list-style:none;padding:0;margin:0">${tlHtml || '<li class="text-muted">No events recorded</li>'}</ul>`
+                );
+
+                // Store current IP for block + profile buttons
                 $('#blockIPBtn').data('ip', s.src_ip);
+                $('#attackerProfileBtn').data('ip', s.src_ip);
 
             } catch(e) {
                 $('#detailSessionId').text('Error loading session');
@@ -629,6 +924,11 @@
                 a.download = 'sessions_export.csv';
                 a.click();
             });
+        }
+
+        function viewAttackerProfile() {
+            const ip = $('#attackerProfileBtn').data('ip');
+            if (ip) window.open('attacker.html?ip=' + encodeURIComponent(ip), '_blank');
         }
 
         function blockIP() {

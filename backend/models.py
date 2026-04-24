@@ -48,16 +48,95 @@ class Session(Base):
     end_time = Column(DateTime, nullable=True)
     duration_secs = Column(Float, nullable=True)
     sensor = Column(String, nullable=True)
+    protocol = Column(String(20), default="ssh")          # ssh|http|smb|ftp|mysql|mssql|sip|telnet
     login_attempts = Column(Integer, default=0)
     login_success = Column(Boolean, default=False)
     commands_run = Column(Integer, default=0)
     files_downloaded = Column(Integer, default=0)
     severity = Column(String, default="low")
     attack_type = Column(String, nullable=True, default="SSH Connect")
+    is_anomaly = Column(Boolean, default=False)
+    anomaly_score = Column(Float, nullable=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
     events = relationship("Event", back_populates="session", lazy="select")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(20), nullable=False, default="analyst")  # admin | analyst | viewer
+    full_name = Column(String(255), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class RetentionConfig(Base):
+    __tablename__ = "retention_config"
+
+    id = Column(Integer, primary_key=True, default=1)
+    events_days = Column(Integer, default=60)
+    sessions_days = Column(Integer, default=90)
+    enrichment_days = Column(Integer, default=90)
+    last_purge_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class AlertRule(Base):
+    __tablename__ = "alert_rules"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255), nullable=False)
+    condition = Column(String(50), nullable=False)
+    threshold = Column(Integer, nullable=False, default=1)
+    severity = Column(String(20), nullable=False, default="high")
+    enabled = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class NotificationConfig(Base):
+    __tablename__ = "notification_config"
+
+    id = Column(Integer, primary_key=True, default=1)
+    webhook_url = Column(String(500), nullable=True)
+    webhook_enabled = Column(Boolean, default=False)
+    email_to = Column(String(255), nullable=True)
+    email_host = Column(String(255), nullable=True)
+    email_port = Column(Integer, default=587)
+    email_user = Column(String(255), nullable=True)
+    email_pass = Column(String(255), nullable=True)
+    email_enabled = Column(Boolean, default=False)
+    min_severity = Column(String(20), default="high")
+    tg_bot_token = Column(String(500), nullable=True)
+    tg_chat_id   = Column(String(100), nullable=True)
+    tg_enabled   = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class HoneypotConfig(Base):
+    __tablename__ = "honeypot_config"
+
+    id = Column(Integer, primary_key=True, default=1)
+    honeypot_type = Column(String(50), default="cowrie")
+    connection_mode = Column(String(20), default="live")
+    host = Column(String(255), default="cowrie")
+    port = Column(Integer, default=2222)
+    protocol = Column(String(10), default="TCP")
+    sensor_name = Column(String(100), default="honeypot-01")
+    log_path = Column(String(500), default="/var/log/cowrie/cowrie.json")
+    notes = Column(Text, nullable=True)
+    last_test_status = Column(String(20), nullable=True)
+    last_test_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
 class Event(Base):
@@ -71,6 +150,7 @@ class Event(Base):
     dst_port = Column(Integer, nullable=True)
     timestamp = Column(DateTime, nullable=False, index=True)
     sensor = Column(String, nullable=True)
+    protocol = Column(String(20), default="ssh")          # ssh|http|smb|ftp|mysql|mssql|sip|telnet
     username = Column(String, nullable=True)
     password = Column(String, nullable=True)
     command_input = Column(String, nullable=True)
@@ -87,3 +167,28 @@ class Event(Base):
     )
 
     session = relationship("Session", back_populates="events")
+
+
+class MalwareSample(Base):
+    """Malware binaries captured by Dionaea."""
+    __tablename__ = "malware_samples"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    sha256 = Column(String(64), unique=True, nullable=False, index=True)
+    md5 = Column(String(32), nullable=True)
+    sha512 = Column(String(128), nullable=True)
+    file_size = Column(Integer, nullable=True)
+    file_type = Column(String(50), nullable=True)   # PE32, ELF, script, etc.
+    first_seen = Column(DateTime, nullable=False, default=func.now())
+    last_seen = Column(DateTime, nullable=False, default=func.now())
+    download_count = Column(Integer, default=1)
+    src_ip = Column(String, nullable=True, index=True)
+    download_url = Column(String(500), nullable=True)
+    protocol = Column(String(20), nullable=True)    # http | ftp | smb
+    sensor = Column(String(100), nullable=True)
+    # VirusTotal scan results (enriched async)
+    vt_detections = Column(Integer, nullable=True)
+    vt_total = Column(Integer, nullable=True)
+    vt_family = Column(String(100), nullable=True)
+    vt_checked_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=func.now())

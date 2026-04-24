@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HoneyDash | Public Threat View</title>
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="dist/css/adminlte.min.css">
+  <link rel="stylesheet" href="dist/css/dark-theme.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    /* ── Public-specific overrides ── */
+    body { background: #060b14; color: #c9d1d9; }
+
+    .public-header {
+      background: linear-gradient(135deg, #080f1e 0%, #0b1a2e 100%);
+      border-bottom: 1px solid rgba(0,200,255,0.15);
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px; position: sticky; top: 0; z-index: 1000;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-icon { color: #00c8ff; font-size: 22px; }
+    .brand-name { color: #e6edf3; font-weight: 700; font-size: 18px; letter-spacing: 0.5px; }
+    .brand-name span { color: #00c8ff; }
+
+    .viewer-badge {
+      background: rgba(0,200,255,0.1);
+      border: 1px solid rgba(0,200,255,0.3);
+      color: #00c8ff;
+      font-size: 11px; font-weight: 600; letter-spacing: 1px;
+      padding: 3px 10px; border-radius: 4px; text-transform: uppercase;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .login-btn {
+      background: rgba(0,200,255,0.1);
+      border: 1px solid rgba(0,200,255,0.4);
+      color: #00c8ff; font-size: 12px; font-weight: 600;
+      padding: 6px 14px; border-radius: 5px; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .login-btn:hover { background: rgba(0,200,255,0.2); color: #00c8ff; text-decoration: none; }
+
+    .live-dot {
+      display: inline-block; width: 8px; height: 8px;
+      background: #28a745; border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity:1; transform:scale(1); }
+      50%       { opacity:0.5; transform:scale(1.2); }
+    }
+
+    /* ── Layout ── */
+    .public-body { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+    .section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: rgba(0,200,255,0.6);
+      margin-bottom: 14px; margin-top: 28px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(0,200,255,0.2), transparent);
+    }
+
+    /* ── Stat boxes ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px; margin-bottom: 6px;
+    }
+    .stat-card {
+      background: #0b1120;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px; padding: 16px 18px;
+      position: relative; overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: rgba(0,200,255,0.25); }
+    .stat-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; width: 3px; height: 100%;
+      background: var(--accent, #00c8ff);
+    }
+    .stat-label { font-size: 11px; color: #8b949e; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 26px; font-weight: 700; color: #e6edf3; line-height: 1; font-family: 'JetBrains Mono', monospace; }
+    .stat-sub   { font-size: 11px; color: #8b949e; margin-top: 4px; }
+
+    /* ── Cards ── */
+    .pub-card {
+      background: #0b1120;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px; padding: 20px;
+      margin-bottom: 20px;
+    }
+    .pub-card-title {
+      font-size: 13px; font-weight: 600; color: #e6edf3;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pub-card-title i { color: #00c8ff; }
+
+    /* ── Map ── */
+    #public-map { height: 360px; width: 100%; border-radius: 6px; }
+
+    /* ── Charts ── */
+    .chart-wrap { position: relative; height: 220px; }
+
+    /* ── Activity feed ── */
+    .activity-list { list-style: none; padding: 0; margin: 0; }
+    .activity-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 13px;
+    }
+    .activity-icon.high   { background: rgba(255,61,87,0.15); color: #ff3d57; }
+    .activity-icon.medium { background: rgba(255,193,7,0.15);  color: #ffc107; }
+    .activity-icon.low    { background: rgba(23,162,184,0.15); color: #17a2b8; }
+    .activity-meta { flex: 1; min-width: 0; }
+    .activity-type { font-size: 13px; color: #e6edf3; font-weight: 500; }
+    .activity-detail { font-size: 11px; color: #8b949e; margin-top: 1px; }
+    .activity-time { font-size: 11px; color: #8b949e; white-space: nowrap; }
+
+    .badge-high   { background: rgba(255,61,87,0.15); color: #ff6b7a; border: 1px solid rgba(255,61,87,0.3); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-medium { background: rgba(255,193,7,0.15); color: #ffd454; border: 1px solid rgba(255,193,7,0.3); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-low    { background: rgba(23,162,184,0.15); color: #63d5ea; border: 1px solid rgba(23,162,184,0.3); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+
+    /* ── Anonymised notice ── */
+    .anon-notice {
+      background: rgba(0,200,255,0.05);
+      border: 1px solid rgba(0,200,255,0.15);
+      border-radius: 6px; padding: 10px 14px;
+      font-size: 12px; color: #8b949e;
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 20px;
+    }
+    .anon-notice i { color: #00c8ff; flex-shrink: 0; }
+
+    /* ── Footer ── */
+    .public-footer {
+      text-align: center; padding: 28px 0 20px;
+      font-size: 12px; color: #8b949e;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      margin-top: 20px;
+    }
+    .public-footer a { color: #00c8ff; text-decoration: none; }
+
+    /* ── Time selector ── */
+    .range-btns { display: flex; gap: 6px; }
+    .range-btn {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      color: #8b949e; font-size: 11px; font-weight: 600; padding: 3px 10px;
+      border-radius: 4px; cursor: pointer; transition: all 0.15s;
+    }
+    .range-btn.active, .range-btn:hover {
+      background: rgba(0,200,255,0.1); border-color: rgba(0,200,255,0.4); color: #00c8ff;
+    }
+
+    /* responsive grid tweaks */
+    @media (max-width: 768px) {
+      .public-header { padding: 0 14px; }
+      .public-body   { padding: 14px; }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════════ HEADER ══════════════════ -->
+  <header class="public-header">
+    <a class="brand" href="public.html">
+      <i class="fas fa-shield-virus brand-icon"></i>
+      <span class="brand-name">Honey<span>Dash</span></span>
+    </a>
+    <span class="viewer-badge"><i class="fas fa-eye mr-1"></i>Public Viewer</span>
+    <div class="header-right">
+      <span style="font-size:12px;color:#8b949e">
+        <span class="live-dot"></span> Live
+      </span>
+      <a class="login-btn" href="login.html">
+        <i class="fas fa-sign-in-alt mr-1"></i> Analyst Login
+      </a>
+    </div>
+  </header>
+
+  <!-- ══════════════════ BODY ══════════════════ -->
+  <div class="public-body">
+
+    <!-- Anonymised notice -->
+    <div class="anon-notice">
+      <i class="fas fa-user-secret fa-lg"></i>
+      <span>
+        This is a <strong style="color:#e6edf3">read-only public view</strong>.
+        All source identifiers (IP addresses, usernames, passwords, commands) are hidden.
+        For full access including alerts and session details, <a href="login.html" style="color:#00c8ff">sign in</a>.
+      </span>
+    </div>
+
+    <!-- ── STAT BOXES ── -->
+    <div class="section-title"><i class="fas fa-chart-bar"></i> Threat Overview — Last 24 Hours</div>
+    <div class="stat-grid">
+      <div class="stat-card" style="--accent:#00c8ff">
+        <div class="stat-label">Total Attacks</div>
+        <div class="stat-value" id="pubTotalAttacks">—</div>
+        <div class="stat-sub">events in 24h</div>
+      </div>
+      <div class="stat-card" style="--accent:#28a745">
+        <div class="stat-label">Unique Sources</div>
+        <div class="stat-value" id="pubUniqueSources">—</div>
+        <div class="stat-sub">distinct origins</div>
+      </div>
+      <div class="stat-card" style="--accent:#ff3d57">
+        <div class="stat-label">High Severity</div>
+        <div class="stat-value" id="pubHighSev">—</div>
+        <div class="stat-sub">critical events</div>
+      </div>
+      <div class="stat-card" style="--accent:#ffc107">
+        <div class="stat-label">Total Sessions</div>
+        <div class="stat-value" id="pubTotalSessions">—</div>
+        <div class="stat-sub">all time</div>
+      </div>
+      <div class="stat-card" style="--accent:#6f42c1">
+        <div class="stat-label">Countries</div>
+        <div class="stat-value" id="pubCountries">—</div>
+        <div class="stat-sub">attack origins</div>
+      </div>
+      <div class="stat-card" style="--accent:#7c3aed">
+        <div class="stat-label">ML Anomalies</div>
+        <div class="stat-value" id="pubAnomalies">—</div>
+        <div class="stat-sub">flagged by AI</div>
+      </div>
+    </div>
+
+    <!-- ── ROW: Timeline + Attack Types ── -->
+    <div class="section-title"><i class="fas fa-chart-line"></i> Attack Trends</div>
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="pub-card">
+          <div class="pub-card-title">
+            <i class="fas fa-chart-area"></i> Attack Timeline
+            <div class="range-btns ml-auto" id="rangeGroup">
+              <button class="range-btn" data-range="24h">24h</button>
+              <button class="range-btn active" data-range="7d">7d</button>
+              <button class="range-btn" data-range="30d">30d</button>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="timelineChart"></canvas></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="pub-card">
+          <div class="pub-card-title"><i class="fas fa-pie-chart"></i> Attack Types (24h)</div>
+          <div class="chart-wrap"><canvas id="typesChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW: Map + Hourly ── -->
+    <div class="section-title"><i class="fas fa-globe"></i> Geographic Distribution</div>
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="pub-card">
+          <div class="pub-card-title"><i class="fas fa-map-marked-alt"></i> Origin Map (Country Level)</div>
+          <div id="public-map"></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="pub-card">
+          <div class="pub-card-title"><i class="fas fa-clock"></i> Attacks by Hour (24h)</div>
+          <div class="chart-wrap"><canvas id="hourlyChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Recent Activity Feed (anonymised) ── -->
+    <div class="section-title"><i class="fas fa-stream"></i> Recent Activity (Anonymised)</div>
+    <div class="pub-card">
+      <div class="pub-card-title">
+        <i class="fas fa-list-ul"></i> Latest Events
+        <span style="font-size:11px;color:#8b949e;margin-left:8px">IPs and payloads are hidden</span>
+      </div>
+      <ul class="activity-list" id="activityList">
+        <li class="activity-item" style="justify-content:center;color:#8b949e">
+          <i class="fas fa-spinner fa-spin mr-2"></i> Loading...
+        </li>
+      </ul>
+    </div>
+
+    <!-- ── Footer ── -->
+    <div class="public-footer">
+      <p>
+        HoneyDash &mdash; Real-Time Honeypot Threat Intelligence &nbsp;|&nbsp;
+        Data refreshes every 60 seconds &nbsp;|&nbsp;
+        <a href="login.html">Analyst Sign In</a>
+      </p>
+      <p style="margin-top:4px;font-size:11px">
+        All source identifiers anonymised for public view.
+        This dashboard is read-only.
+      </p>
+    </div>
+
+  </div><!-- /public-body -->
+
+  <!-- ══════════════════ SCRIPTS ══════════════════ -->
+  <script src="plugins/jquery/jquery.min.js"></script>
+  <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="plugins/chart.js/Chart.min.js"></script>
+
+  <script>
+    // ── Detect API base (same origin) ──
+    const API = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+      ? 'http://' + window.location.hostname + ':8000'
+      : '';
+
+    async function apiFetch(path) {
+      const res = await fetch(API + path);
+      if (!res.ok) throw new Error(res.status);
+      return res.json();
+    }
+
+    // ── Chart defaults ──
+    Chart.defaults.global.defaultFontColor = '#8b949e';
+    Chart.defaults.global.defaultFontFamily = "'Source Sans Pro', sans-serif";
+
+    const CYAN  = 'rgba(0,200,255,0.8)';
+    const CYAN_FILL = 'rgba(0,200,255,0.1)';
+
+    // ── Map ──
+    let pubMap = null;
+    function initMap() {
+      pubMap = L.map('public-map', { zoomControl: true, attributionControl: false }).setView([20, 0], 2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pubMap);
+      // Darken tiles via CSS (same as main dashboard)
+      document.getElementById('public-map').style.filter = 'invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.9)';
+    }
+
+    function loadMap() {
+      apiFetch('/api/public/map').then(d => {
+        if (!pubMap) return;
+        // Clear existing layers except tile
+        pubMap.eachLayer(l => { if (l instanceof L.CircleMarker || l instanceof L.Marker) pubMap.removeLayer(l); });
+        d.markers.forEach(m => {
+          const r = Math.min(6 + Math.sqrt(m.count) * 2, 28);
+          L.circleMarker([m.lat, m.lng], {
+            radius: r,
+            fillColor: '#00c8ff', fillOpacity: 0.55,
+            color: '#00c8ff', weight: 1, opacity: 0.9,
+          })
+            .bindPopup(`<b>${m.country || 'Unknown'}</b><br>${m.count} session${m.count !== 1 ? 's' : ''}`)
+            .addTo(pubMap);
+        });
+      }).catch(() => {});
+    }
+
+    // ── Timeline chart ──
+    let timelineChart = null;
+    function initTimelineChart() {
+      const ctx = document.getElementById('timelineChart').getContext('2d');
+      timelineChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Attacks', data: [], borderColor: CYAN, backgroundColor: CYAN_FILL, borderWidth: 2, pointRadius: 3, fill: true, tension: 0.3 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          legend: { display: false },
+          scales: {
+            xAxes: [{ gridLines: { color: 'rgba(255,255,255,0.05)' }, ticks: { maxTicksLimit: 8 } }],
+            yAxes: [{ gridLines: { color: 'rgba(255,255,255,0.05)' }, ticks: { beginAtZero: true, precision: 0 } }],
+          },
+          tooltips: { mode: 'index', intersect: false },
+        },
+      });
+    }
+
+    function loadTimeline(range) {
+      apiFetch('/api/public/timeline?range=' + range).then(d => {
+        timelineChart.data.labels = d.labels;
+        timelineChart.data.datasets[0].data = d.data;
+        timelineChart.update();
+      }).catch(() => {});
+    }
+
+    // ── Attack types chart ──
+    let typesChart = null;
+    function initTypesChart() {
+      const ctx = document.getElementById('typesChart').getContext('2d');
+      typesChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: [],
+          datasets: [{
+            data: [],
+            backgroundColor: ['#00c8ff','#ff3d57','#ffc107','#28a745','#6f42c1'],
+            borderColor: '#0b1120', borderWidth: 2,
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } },
+          cutoutPercentage: 60,
+        },
+      });
+    }
+
+    function loadAttackTypes() {
+      apiFetch('/api/public/attack-types').then(d => {
+        typesChart.data.labels = d.labels;
+        typesChart.data.datasets[0].data = d.data;
+        typesChart.update();
+      }).catch(() => {});
+    }
+
+    // ── Hourly chart ──
+    let hourlyChart = null;
+    function initHourlyChart() {
+      const ctx = document.getElementById('hourlyChart').getContext('2d');
+      hourlyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0') + 'h'),
+          datasets: [{ label: 'Events', data: Array(24).fill(0), backgroundColor: 'rgba(0,200,255,0.5)', borderColor: CYAN, borderWidth: 1 }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          legend: { display: false },
+          scales: {
+            xAxes: [{ gridLines: { display: false }, ticks: { maxTicksLimit: 8 } }],
+            yAxes: [{ gridLines: { color: 'rgba(255,255,255,0.05)' }, ticks: { beginAtZero: true, precision: 0 } }],
+          },
+        },
+      });
+    }
+
+    function loadHourly() {
+      apiFetch('/api/public/hourly').then(d => {
+        hourlyChart.data.datasets[0].data = d.data;
+        hourlyChart.update();
+      }).catch(() => {});
+    }
+
+    // ── Stats ──
+    function loadStats() {
+      apiFetch('/api/public/stats').then(d => {
+        document.getElementById('pubTotalAttacks').textContent  = d.total_attacks_24h.toLocaleString();
+        document.getElementById('pubUniqueSources').textContent = d.unique_sources_24h.toLocaleString();
+        document.getElementById('pubHighSev').textContent       = d.high_severity_24h.toLocaleString();
+        document.getElementById('pubTotalSessions').textContent = d.total_sessions.toLocaleString();
+        document.getElementById('pubCountries').textContent     = d.countries_seen.toLocaleString();
+        document.getElementById('pubAnomalies').textContent     = d.ml_anomalies.toLocaleString();
+      }).catch(() => {});
+    }
+
+    // ── Activity feed ──
+    function countryFlag(code) {
+      if (!code || code.length !== 2) return '';
+      return code.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0))) + ' ';
+    }
+
+    function timeAgo(iso) {
+      const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+      if (diff < 60) return diff + 's ago';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      return Math.floor(diff / 3600) + 'h ago';
+    }
+
+    function attackIcon(type) {
+      const t = (type || '').toLowerCase();
+      if (t.includes('brute') || t.includes('login')) return 'fa-key';
+      if (t.includes('command') || t.includes('exec'))  return 'fa-terminal';
+      if (t.includes('download') || t.includes('file')) return 'fa-file-download';
+      if (t.includes('scan') || t.includes('connect'))  return 'fa-plug';
+      return 'fa-shield-alt';
+    }
+
+    function loadActivity() {
+      apiFetch('/api/public/recent-activity').then(d => {
+        const list = document.getElementById('activityList');
+        if (!d.items || d.items.length === 0) {
+          list.innerHTML = '<li class="activity-item" style="justify-content:center;color:#8b949e">No recent activity</li>';
+          return;
+        }
+        list.innerHTML = d.items.map(ev => {
+          const sev   = ev.severity || 'low';
+          const flag  = countryFlag(ev.country_code);
+          const loc   = ev.city ? `${ev.city}, ${ev.country}` : ev.country;
+          const icon  = attackIcon(ev.attack_type);
+          const port  = ev.dst_port ? ` &rarr; port ${ev.dst_port}` : '';
+          return `
+            <li class="activity-item">
+              <div class="activity-icon ${sev}"><i class="fas ${icon}"></i></div>
+              <div class="activity-meta">
+                <div class="activity-type">${ev.attack_type || 'Unknown'}<span class="badge-${sev} ml-2">${sev}</span></div>
+                <div class="activity-detail">${flag}${loc || 'Unknown'}${port}</div>
+              </div>
+              <div class="activity-time">${ev.timestamp ? timeAgo(ev.timestamp) : ''}</div>
+            </li>`;
+        }).join('');
+      }).catch(() => {});
+    }
+
+    // ── Range buttons ──
+    document.getElementById('rangeGroup').addEventListener('click', e => {
+      const btn = e.target.closest('.range-btn');
+      if (!btn) return;
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadTimeline(btn.dataset.range);
+    });
+
+    // ── Init ──
+    initMap();
+    initTimelineChart();
+    initTypesChart();
+    initHourlyChart();
+
+    loadStats();
+    loadTimeline('7d');
+    loadAttackTypes();
+    loadMap();
+    loadHourly();
+    loadActivity();
+
+    // Refresh every 60 s
+    setInterval(() => {
+      loadStats();
+      loadAttackTypes();
+      loadHourly();
+      loadActivity();
+    }, 60000);
+
+    // Map refreshes every 5 min
+    setInterval(loadMap, 300000);
+  </script>
+
+</body>
+</html>
