@@ -1,23 +1,15 @@
-/**
- * HoneyDash API endpoint auto-configuration
- *
- * Local dev  (http://localhost:8090/…):
- *   Frontend is served by the nginx container on :8090
- *   Backend runs on :8000 — call it directly.
- *
- * Production (https://yourdomain.com/…):
- *   nginx reverse-proxy routes /api/, /auth/, /ws to the backend
- *   on the same domain — no port in the URL needed.
- */
 (function () {
-  const h     = location.hostname;
-  const local = h === 'localhost' || h === '127.0.0.1';
+  const protocol = location.protocol === 'https:' ? 'https:' : 'http:';
+  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = location.hostname;
+  const frontendPort = location.port;
 
-  window._HD_API = local
-    ? 'http://localhost:8000'
+  // Docker Compose exposes the static frontend on :8090 and FastAPI on :8000.
+  // If a reverse proxy serves everything on one origin, use the same origin.
+  const backendOrigin = frontendPort === '8090'
+    ? `${protocol}//${host}:8000`
     : location.origin;
 
-  window._HD_WS = local
-    ? 'ws://localhost:8000/ws'
-    : (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
+  window._HD_API = backendOrigin;
+  window._HD_WS = `${wsProtocol}//${new URL(backendOrigin).host}/ws`;
 })();
