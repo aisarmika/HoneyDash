@@ -318,12 +318,10 @@
   <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="plugins/chart.js/Chart.min.js"></script>
+  <script src="config.js"></script>
 
   <script>
-    // ── Detect API base (same origin) ──
-    const API = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-      ? 'http://' + window.location.hostname + ':8000'
-      : '';
+    const API = window._HD_API;
 
     async function apiFetch(path) {
       const res = await fetch(API + path);
