@@ -549,8 +549,8 @@ async function loadRules() {
     try {
         const r = await fetch(API + '/api/alert-rules', { headers: authHdr() });
         if (!r.ok) return;
-        const rules = await r.json();
-        renderRules(rules);
+        const data = await r.json();
+        renderRules(Array.isArray(data) ? data : (data.rules || []));
     } catch (e) { /* rules API not yet mounted — silently skip */ }
 }
 

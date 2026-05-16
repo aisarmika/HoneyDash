@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   # ── PostgreSQL database ──────────────────────────────────────────────────────
@@ -146,9 +144,10 @@ services:
       context: ./mock_dionaea
       dockerfile: Dockerfile
     container_name: honeydash-mock-dionaea
+    env_file:
+      - ./backend/.env
     environment:
       - BACKEND_URL=http://backend:8000
-      - SENSOR_API_KEY=honeydash-sensor-key-change-me
       - EVENTS_PER_SECOND=0.4
       - SENSOR_NAME=dionaea-01
     profiles:

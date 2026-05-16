@@ -544,7 +544,9 @@ async def get_sensors(
             """
             SELECT sensor,
                    MAX(timestamp) AS last_seen,
-                   COUNT(*) AS event_count
+                   COUNT(*) FILTER (
+                       WHERE timestamp >= NOW() - INTERVAL '24 hours'
+                   ) AS event_count_24h
             FROM events
             WHERE sensor IS NOT NULL
             GROUP BY sensor
@@ -568,7 +570,7 @@ async def get_sensors(
             {
                 "name": r.sensor,
                 "last_seen": last_dt.isoformat() + "Z" if last_dt else None,
-                "event_count_24h": r.event_count,
+                "event_count_24h": r.event_count_24h,
                 "online": online,
                 "protocols": sensor_protocols.get(r.sensor, "—"),
             }
