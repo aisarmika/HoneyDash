@@ -63,12 +63,12 @@ async def public_stats(db: AsyncSession = Depends(get_db)):
 
 @router.get("/timeline")
 async def public_timeline(
-    range: str = Query("7d", pattern="^(24h|7d|30d)$"),
+    range_value: str = Query("7d", alias="range", pattern="^(24h|7d|30d)$"),
     db: AsyncSession = Depends(get_db),
 ):
     now = _now_utc()
 
-    if range == "24h":
+    if range_value == "24h":
         cutoff = now - timedelta(hours=24)
         result = await db.execute(
             text(
@@ -88,7 +88,7 @@ async def public_timeline(
             slots[bucket] = slots.get(bucket, 0) + row.cnt
         labels, data = list(slots.keys()), list(slots.values())
 
-    elif range == "7d":
+    elif range_value == "7d":
         cutoff = now - timedelta(days=7)
         result = await db.execute(
             text(
@@ -130,7 +130,7 @@ async def public_timeline(
             slots[f"Week {week}"] += row.cnt
         labels, data = list(slots.keys()), list(slots.values())
 
-    return {"range": range, "labels": labels, "data": data}
+    return {"range": range_value, "labels": labels, "data": data}
 
 
 @router.get("/attack-types")
