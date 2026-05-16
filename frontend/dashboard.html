@@ -135,6 +135,50 @@
     .sortable-chosen { box-shadow: 0 0 0 2px var(--hd-blue2); }
     .card-header { cursor: grab; }
     .card-header:active { cursor: grabbing; }
+
+    /* ── Enterprise SOC grid ───────────────────────────────────────── */
+    .soc-section-label {
+      display:flex; align-items:center; gap:8px;
+      margin:10px 0 8px; padding:6px 10px;
+      border:1px solid rgba(88,166,255,.18);
+      background:linear-gradient(90deg, rgba(88,166,255,.08), rgba(57,211,187,.03));
+      border-radius:6px;
+      color:var(--hd-text2);
+      font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+    }
+    .soc-section-label::after {
+      content:''; height:1px; flex:1;
+      background:linear-gradient(90deg, rgba(88,166,255,.22), transparent);
+    }
+    .soc-grid .card {
+      min-height: 100%;
+      background:linear-gradient(180deg, rgba(28,35,51,.98), rgba(22,27,34,.98)) !important;
+      border-color:rgba(139,148,158,.22) !important;
+      box-shadow:0 8px 22px rgba(0,0,0,.24) !important;
+    }
+    .soc-grid .card-header {
+      min-height:42px;
+      background:rgba(13,17,23,.42) !important;
+      border-bottom-color:rgba(139,148,158,.18) !important;
+    }
+    .soc-grid .card-title {
+      font-size:10.5px !important;
+      letter-spacing:.08em !important;
+    }
+    .soc-grid .table {
+      font-size:11px !important;
+    }
+    .soc-grid .table thead th,
+    .soc-grid .table td {
+      padding:5px 7px !important;
+    }
+    .soc-grid .list-group-item {
+      padding:6px 8px !important;
+      font-size:11px !important;
+    }
+    @media (min-width: 1200px) {
+      .soc-grid .col-xl-4 { padding-left:6px; padding-right:6px; }
+    }
   </style>
 </head>
 
@@ -275,7 +319,7 @@
           <span id="activeAlerts" style="display:none">0</span>
 
           <!-- ── Row 1: Core KPIs ──────────────────────────────────────── -->
-          <div class="row">
+          <div class="row" data-panel="overview">
             <div class="col-12 col-sm-6 col-md-3">
               <div class="info-box">
                 <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-globe"></i></span>
@@ -315,7 +359,7 @@
           </div>
 
           <!-- ── Row 2: Secondary KPIs ─────────────────────────────────── -->
-          <div class="row">
+          <div class="row" data-panel="overview">
             <div class="col-12 col-sm-6 col-md-3">
               <div class="info-box">
                 <span class="info-box-icon bg-secondary elevation-1"><i class="fas fa-project-diagram"></i></span>
@@ -370,7 +414,7 @@
           </div>
 
           <!-- ── Row 4: Severity Trend + Protocol Mix ──────────────────── -->
-          <div class="row draggable-row">
+          <div class="row draggable-row" data-panel="overview">
             <div class="col-md-8" data-panel-id="panel1">
               <div class="card card-primary card-outline">
                 <div class="card-header">
@@ -397,7 +441,7 @@
           </div>
 
           <!-- ── Row 5: Attack Timeline + Attack Types ─────────────────── -->
-          <div class="row draggable-row">
+          <div class="row draggable-row" data-panel="overview">
             <div class="col-md-8" data-panel-id="panel3">
               <div class="card card-primary card-outline">
                 <div class="card-header">
@@ -428,7 +472,7 @@
           </div>
 
           <!-- ── Row 6: Geo Map + Sensor Status ────────────────────────── -->
-          <div class="row">
+          <div class="row" data-panel="overview">
             <div class="col-md-8">
               <div class="card card-primary card-outline">
                 <div class="card-header">
@@ -484,9 +528,14 @@
             </div>
           </div>
 
-          <!-- ── Row 7: Top Attackers + Malware Feed ───────────────────── -->
-          <div class="row draggable-row">
-            <div class="col-md-6" data-panel-id="panel5">
+          <div class="soc-section-label">
+            <i class="fas fa-stream"></i>
+            Threat Intelligence Tables
+          </div>
+
+          <!-- ── SOC Row: three enterprise tables ──────────────────────── -->
+          <div class="row draggable-row soc-grid">
+            <div class="col-xl-4 col-lg-4 col-md-12" data-panel-id="panel5" data-panel="overview">
               <div class="card card-danger card-outline">
                 <div class="card-header">
                   <h3 class="card-title"><i class="fas fa-user-secret mr-1"></i>Top Attackers (24h)</h3>
@@ -501,7 +550,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-6" data-panel-id="panel6">
+            <div class="col-xl-4 col-lg-4 col-md-12" data-panel-id="panel6" data-panel="dionaea">
               <div class="card card-outline" style="border-color:#9c27b0">
                 <div class="card-header">
                   <h3 class="card-title"><i class="fas fa-bug mr-1" style="color:#9c27b0"></i>Malware Captures (Dionaea)</h3>
@@ -519,11 +568,7 @@
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- ── Row 8: Top Credentials + Top Ports ────────────────────── -->
-          <div class="row draggable-row">
-            <div class="col-md-6" data-panel-id="panel7">
+            <div class="col-xl-4 col-lg-4 col-md-12" data-panel-id="panel7" data-panel="credential">
               <div class="card card-warning card-outline">
                 <div class="card-header">
                   <h3 class="card-title"><i class="fas fa-key mr-1"></i>Top Credentials Tried (24h)</h3>
@@ -548,7 +593,11 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-6" data-panel-id="panel8">
+          </div>
+
+          <!-- ── Row 8: Targeting + Hourly Operations ───────────────────── -->
+          <div class="row draggable-row" data-panel="overview">
+            <div class="col-lg-6" data-panel-id="panel8">
               <div class="card card-primary card-outline">
                 <div class="card-header">
                   <h3 class="card-title"><i class="fas fa-ethernet mr-1"></i>Top Targeted Ports (24h)</h3>
@@ -558,17 +607,13 @@
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- ── Row 9: Hourly Distribution ───────────────────────────── -->
-          <div class="row">
-            <div class="col-12">
+            <div class="col-lg-6">
               <div class="card card-primary card-outline">
                 <div class="card-header">
                   <h3 class="card-title"><i class="fas fa-clock mr-1"></i>Hourly Distribution (24h UTC)</h3>
                 </div>
                 <div class="card-body">
-                  <canvas id="hourlyChart" style="height:160px;max-height:160px;max-width:100%"></canvas>
+                  <canvas id="hourlyChart" style="height:240px;max-height:240px;max-width:100%"></canvas>
                 </div>
               </div>
             </div>
@@ -576,7 +621,7 @@
 
           <!-- ── Row 10: Unique Attackers + Login Breakdown ──────────── -->
           <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-6" data-panel="overview">
               <div class="card card-success card-outline">
                 <div class="card-header">
                   <h3 class="card-title"><i class="fas fa-user-ninja mr-1"></i>Unique Attackers Per Day (14d)</h3>
@@ -586,7 +631,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6" data-panel="credential">
               <div class="card card-warning card-outline">
                 <div class="card-header">
                   <h3 class="card-title"><i class="fas fa-unlock-alt mr-1"></i>Login Attempts vs Successes (7d)</h3>
@@ -754,8 +799,78 @@
                       <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-crosshairs mr-1"></i>Top Sources (24h)</h6>
                       <div style="max-height:220px;overflow-y:auto">
                         <table class="table table-sm table-striped mb-0">
-                          <thead><tr><th>IP</th><th>Proto</th><th>Hits</th></tr></thead>
-                          <tbody id="dionaeaSrcBody"><tr><td colspan="3" class="text-center text-muted py-3">Waiting for Dionaea</td></tr></tbody>
+                          <thead><tr><th>#</th><th>IP</th><th>Proto</th><th>Hits</th></tr></thead>
+                          <tbody id="dionaeaSrcBody"><tr><td colspan="4" class="text-center text-muted py-3">Waiting for Dionaea</td></tr></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Remote Custom Honeypot ──────────────────────────────────────── -->
+          <div class="row" data-panel="remote">
+            <div class="col-12">
+              <div class="card card-outline" style="border-color:#8957e5">
+                <div class="card-header">
+                  <h3 class="card-title"><i class="fas fa-satellite-dish mr-2" style="color:#8957e5"></i>Remote Sensor — Friend Honeypot</h3>
+                  <div class="card-tools"><span class="badge" style="background:#8957e5;color:#fff;font-size:10px" id="remoteSensorBadge">remote</span></div>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <div class="col-6 col-md-3">
+                      <div style="background:var(--hd-surface);border:1px solid var(--hd-border2);border-radius:6px;padding:10px 14px">
+                        <div style="font-size:10px;color:var(--hd-muted);text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-stream mr-1" style="color:#8957e5"></i>Events 24h</div>
+                        <div style="font-size:22px;font-weight:700;color:var(--hd-text);line-height:1.2" id="remoteEvents24h">—</div>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div style="background:var(--hd-surface);border:1px solid var(--hd-border2);border-radius:6px;padding:10px 14px">
+                        <div style="font-size:10px;color:var(--hd-muted);text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-user-secret mr-1" style="color:#20c997"></i>Unique IPs</div>
+                        <div style="font-size:22px;font-weight:700;color:var(--hd-text);line-height:1.2" id="remoteUniqueIps">—</div>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div style="background:var(--hd-surface);border:1px solid var(--hd-border2);border-radius:6px;padding:10px 14px">
+                        <div style="font-size:10px;color:var(--hd-muted);text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-exclamation-triangle mr-1" style="color:#dc3545"></i>High Severity</div>
+                        <div style="font-size:22px;font-weight:700;color:var(--hd-text);line-height:1.2" id="remoteHighSeverity">—</div>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div style="background:var(--hd-surface);border:1px solid var(--hd-border2);border-radius:6px;padding:10px 14px">
+                        <div style="font-size:10px;color:var(--hd-muted);text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-clock mr-1" style="color:#ffc107"></i>Last Seen</div>
+                        <div style="font-size:13px;font-weight:700;color:var(--hd-text);line-height:1.2" id="remoteLastSeen">—</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-fingerprint mr-1"></i>Event Types (24h)</h6>
+                      <canvas id="remoteEventTypeChart" style="height:220px;max-height:220px;max-width:100%"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-ethernet mr-1"></i>Targeted Ports (24h)</h6>
+                      <canvas id="remotePortChart" style="height:220px;max-height:220px;max-width:100%"></canvas>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-7">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-crosshairs mr-1"></i>Top Remote Sources</h6>
+                      <div style="max-height:220px;overflow-y:auto">
+                        <table class="table table-sm table-striped mb-0">
+                          <thead><tr><th>IP</th><th>Country</th><th>Proto</th><th>Hits</th><th>Sev</th></tr></thead>
+                          <tbody id="remoteSourcesBody"><tr><td colspan="5" class="text-center text-muted py-3">Waiting for remote sensor events</td></tr></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="col-md-5">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-key mr-1"></i>Credential Attempts</h6>
+                      <div style="max-height:220px;overflow-y:auto">
+                        <table class="table table-sm table-striped mb-0">
+                          <thead><tr><th>User</th><th>Password</th><th>Attempts</th></tr></thead>
+                          <tbody id="remoteCredsBody"><tr><td colspan="3" class="text-center text-muted py-3">No remote credentials yet</td></tr></tbody>
                         </table>
                       </div>
                     </div>
@@ -766,7 +881,7 @@
           </div>
 
           <!-- ── ML Anomaly Detection ───────────────────────────────────────── -->
-          <div class="row" data-panel="all" id="mlAnomalyCard">
+          <div class="row" data-panel="ml" id="mlAnomalyCard">
             <div class="col-12">
               <div class="card card-outline" style="border-color:#7c3aed">
                 <div class="card-header">
@@ -794,7 +909,7 @@
           </div>
 
           <!-- ── Geographic Intelligence ───────────────────────────────────── -->
-          <div class="row" data-panel="all">
+          <div class="row" data-panel="geo">
             <div class="col-12">
               <div class="card card-outline" style="border-color:#28a745">
                 <div class="card-header">
@@ -820,7 +935,7 @@
           </div>
 
           <!-- ── Network Intelligence ──────────────────────────────────────── -->
-          <div class="row" data-panel="all">
+          <div class="row" data-panel="network">
             <div class="col-12">
               <div class="card card-outline" style="border-color:#17a2b8">
                 <div class="card-header">
@@ -866,7 +981,7 @@
           </div>
 
           <!-- ── Attack Heatmap ─────────────────────────────────────────────── -->
-          <div class="row" data-panel="all">
+          <div class="row" data-panel="geo">
             <div class="col-12">
               <div class="card card-outline" style="border-color:#ffc107">
                 <div class="card-header">
@@ -889,7 +1004,7 @@
           </div>
 
           <!-- ── Row 10: Live Attack Feed ──────────────────────────────── -->
-          <div class="row">
+          <div class="row" data-panel="overview">
             <div class="col-12">
               <div class="card card-primary card-outline">
                 <div class="card-header">
@@ -981,6 +1096,11 @@
     return `<span class="proto-badge" style="background:${bg}">${lbl}</span>`;
   }
 
+  function sevBadge(severity) {
+    const sev = (severity || 'low').toLowerCase();
+    return `<span class="badge badge-${sev}">${sev.charAt(0).toUpperCase()+sev.slice(1)}</span>`;
+  }
+
   // ═══════════════════════ MITRE ATT&CK ════════════════════════════════════
   const MITRE_MAP = {
     'SSH Brute Force':         { id:'T1110.001', name:'Brute Force: Password Guessing',     tactic:'Credential Access',  color:'#e74c3c' },
@@ -1044,17 +1164,17 @@
     document.getElementById(id).classList.add(cls);
     document.getElementById('sensorFilterLabel').textContent = sensor ? `Filtering: ${sensor}` : '';
 
-    // Show/hide panels based on sensor selection
-    // 'all' panels always show; 'cowrie' only for cowrie-01 or all; 'dionaea' only for dionaea-01 or all
+    // Show/hide analyst workspaces based on sensor selection.
     const visiblePanels = {
-      '':           ['all', 'cowrie', 'dionaea'],
-      'cowrie-01':  ['all', 'cowrie'],
-      'dionaea-01': ['all', 'dionaea'],
-      'remote':     ['all'],
+      '':           ['overview', 'cowrie', 'dionaea', 'remote', 'credential', 'geo', 'network', 'ml'],
+      'cowrie-01':  ['overview', 'cowrie', 'credential', 'geo', 'network', 'ml'],
+      'dionaea-01': ['overview', 'dionaea', 'geo', 'network', 'ml'],
+      'remote':     ['overview', 'remote', 'credential', 'geo', 'network', 'ml'],
     };
     const visible = visiblePanels[sensor] || visiblePanels[''];
     document.querySelectorAll('[data-panel]').forEach(el => {
-      const show = visible.includes(el.getAttribute('data-panel'));
+      const tokens = (el.getAttribute('data-panel') || '').split(/\s+/);
+      const show = tokens.some(t => visible.includes(t));
       el.style.display = show ? '' : 'none';
     });
 
@@ -1064,7 +1184,7 @@
     loadAttackTypes(); loadSeverityTrend(); loadProtocolStats();
     loadHourlyData(); loadTopPorts(); loadTopAttackers(); loadTopCredentials();
     loadMalwareFeed(); loadUniqueAttackers(); loadLoginBreakdown();
-    loadDionaeaDeep(); loadCredentialAnalysis(); loadNetworkIntel();
+    loadCowrieDeep(); loadDionaeaDeep(); loadRemoteDeep(); loadGeographicIntel(); loadCredentialAnalysis(); loadNetworkIntel();
   }
 
   // ═══════════════════════ TOAST ═══════════════════════════════════════════
@@ -1624,8 +1744,62 @@
   }
 
   // ═══════════════════════ RECENT EVENTS (initial) ═════════════════════════
+  // ═══════════════════════ COWRIE DEEP ═════════════════════════════════════
+  let cowrieDurChart = null;
+  async function loadCowrieDeep() {
+    try {
+      const d = await apiFetch(sensorParamFor('/api/dashboard/cowrie-deep'));
+      const setText = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+      const login = d.login || {};
+      setText('csAttempts', (login.attempts || 0).toLocaleString());
+      setText('csSuccesses', (login.successes || 0).toLocaleString());
+      setText('csSuccessRate', (login.success_rate || 0).toFixed(1) + '%');
+      setText('csAvgAttempts', (login.avg_attempts || 0).toFixed(1));
+      setText('csCmdSessions', (login.command_sessions || 0).toLocaleString());
+      setText('cowrieSessBadge', `${(login.total_sessions || 0).toLocaleString()} sessions`);
+
+      const bar = document.getElementById('csSuccessBar');
+      if (bar) bar.style.width = Math.min(100, Math.max(0, login.success_rate || 0)) + '%';
+
+      const tbody = document.getElementById('cowrieCmdBody');
+      if (tbody) {
+        if (!d.commands || !d.commands.length) {
+          tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No Cowrie command activity yet</td></tr>';
+        } else {
+          const max = Math.max(...d.commands.map(c => c.count || 0), 1);
+          tbody.innerHTML = d.commands.map((c, i) => `
+            <tr>
+              <td style="color:#6c757d">${i+1}</td>
+              <td><code style="font-size:10px">${escHtml(c.command || '—')}</code></td>
+              <td><strong>${(c.count || 0).toLocaleString()}</strong>
+                <div class="progress mt-1" style="height:3px;background:rgba(255,255,255,0.08)">
+                  <div class="progress-bar bg-info" style="width:${Math.round((c.count || 0) / max * 100)}%"></div>
+                </div>
+              </td>
+            </tr>`).join('');
+        }
+      }
+
+      const durCtx = document.getElementById('cowrieDurChart');
+      const duration = d.duration || { labels: [], data: [] };
+      if (durCtx) {
+        if (!cowrieDurChart) {
+          cowrieDurChart = new Chart(durCtx, {
+            type: 'bar',
+            data: { labels: duration.labels, datasets: [{ label: 'Sessions', data: duration.data, backgroundColor:'#17a2b8', borderRadius:3 }] },
+            options: { plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#adb5bd',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}, animation:{duration:600} }
+          });
+        } else {
+          cowrieDurChart.data.labels = duration.labels;
+          cowrieDurChart.data.datasets[0].data = duration.data;
+          cowrieDurChart.update();
+        }
+      }
+    } catch(e) {}
+  }
+
   // ═══════════════════════ DIONAEA DEEP ════════════════════════════════════
-  let dioTimelineChart = null, dioVtBucketsChart = null, dioFamilyChart = null;
+  let dioTimelineChart = null, dioVtBucketsChart = null, dioFamilyChart = null, dionaeaServiceChart = null, malwareTypeChart = null;
   async function loadDionaeaDeep() {
     try {
       const d = await apiFetch(sensorParamFor('/api/dashboard/dionaea-deep'));
@@ -1636,6 +1810,7 @@
       setText('dioVtDetected', (d.vt_detected||0).toLocaleString());
       setText('dioVtRate', (d.vt_rate||0).toFixed(1) + '% hit rate');
       setText('dioUniqueIps', (d.unique_ips||0).toLocaleString());
+      setText('dionaeaTotalBadge', `${(d.total||0).toLocaleString()} malware samples`);
 
       // Timeline chart
       const tlCtx = document.getElementById('dioTimelineChart');
@@ -1647,6 +1822,41 @@
             options: { plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}, animation:{duration:600} }
           });
         } else { dioTimelineChart.data.labels=d.timeline.labels; dioTimelineChart.data.datasets[0].data=d.timeline.data; dioTimelineChart.update(); }
+      }
+
+      // Service capture chart
+      const svcCtx = document.getElementById('dionaeaServiceChart');
+      const service = d.service || d.protocol || { labels: [], data: [] };
+      if (svcCtx) {
+        if (!dionaeaServiceChart) {
+          dionaeaServiceChart = new Chart(svcCtx, {
+            type: 'bar',
+            data: { labels: service.labels, datasets: [{ label: 'Events', data: service.data, backgroundColor:'#fd7e14', borderRadius:3 }] },
+            options: { plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#adb5bd',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}, animation:{duration:600} }
+          });
+        } else {
+          dionaeaServiceChart.data.labels = service.labels;
+          dionaeaServiceChart.data.datasets[0].data = service.data;
+          dionaeaServiceChart.update();
+        }
+      }
+
+      // Captured file type chart
+      const typeCtx = document.getElementById('malwareTypeChart');
+      const fileTypes = d.file_types || { labels: [], data: [] };
+      if (typeCtx) {
+        const typeColors = ['#dc3545','#fd7e14','#ffc107','#20c997','#17a2b8','#6f42c1','#e83e8c','#28a745'];
+        if (!malwareTypeChart) {
+          malwareTypeChart = new Chart(typeCtx, {
+            type: 'doughnut',
+            data: { labels: fileTypes.labels, datasets: [{ data: fileTypes.data, backgroundColor: typeColors, borderWidth:0 }] },
+            options: { cutout:'62%', plugins:{legend:{position:'bottom',labels:{color:'#adb5bd',font:{size:10}}}}, animation:{duration:600} }
+          });
+        } else {
+          malwareTypeChart.data.labels = fileTypes.labels;
+          malwareTypeChart.data.datasets[0].data = fileTypes.data;
+          malwareTypeChart.update();
+        }
       }
 
       // VT buckets chart
@@ -1699,6 +1909,139 @@
               <td style="font-size:11px;color:#6c757d">${ts}</td>
             </tr>`;
           }).join('');
+        }
+      }
+
+      const srcBody = document.getElementById('dionaeaSrcBody');
+      if (srcBody) {
+        if (!d.top_sources || !d.top_sources.length) {
+          srcBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No Dionaea service hits yet</td></tr>';
+        } else {
+          srcBody.innerHTML = d.top_sources.map((s, i) => `
+            <tr>
+              <td style="color:#6c757d">${i+1}</td>
+              <td><code style="font-size:10px">${escHtml(s.src_ip || '—')}</code></td>
+              <td>${protoBadge(s.protocol || 'unknown')}</td>
+              <td><strong style="color:#fd7e14">${(s.hits || 0).toLocaleString()}</strong></td>
+            </tr>`).join('');
+        }
+      }
+    } catch(e) {}
+  }
+
+  // ═══════════════════════ REMOTE SENSOR DEEP ══════════════════════════════
+  let remoteEventTypeChart = null, remotePortChart = null;
+  async function loadRemoteDeep() {
+    try {
+      const path = _activeSensor ? sensorParamFor('/api/dashboard/remote-deep') : '/api/dashboard/remote-deep';
+      const d = await apiFetch(path);
+      const stats = d.stats || {};
+      const setText = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+      setText('remoteSensorBadge', d.sensor || 'remote');
+      setText('remoteEvents24h', (stats.events_24h || 0).toLocaleString());
+      setText('remoteUniqueIps', (stats.unique_ips || 0).toLocaleString());
+      setText('remoteHighSeverity', (stats.high_severity || 0).toLocaleString());
+      setText('remoteLastSeen', stats.last_seen ? new Date(stats.last_seen).toLocaleString() : 'No events');
+
+      const eventCtx = document.getElementById('remoteEventTypeChart');
+      const eventTypes = d.event_types || { labels: [], data: [] };
+      if (eventCtx) {
+        if (!remoteEventTypeChart) {
+          remoteEventTypeChart = new Chart(eventCtx, {
+            type: 'bar',
+            data: { labels: eventTypes.labels, datasets: [{ label: 'Events', data: eventTypes.data, backgroundColor:'#8957e5', borderRadius:3 }] },
+            options: { indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#adb5bd',font:{size:10}},grid:{display:false}}}, animation:{duration:600} }
+          });
+        } else {
+          remoteEventTypeChart.data.labels = eventTypes.labels;
+          remoteEventTypeChart.data.datasets[0].data = eventTypes.data;
+          remoteEventTypeChart.update();
+        }
+      }
+
+      const portCtx = document.getElementById('remotePortChart');
+      const ports = d.ports || { labels: [], data: [] };
+      if (portCtx) {
+        if (!remotePortChart) {
+          remotePortChart = new Chart(portCtx, {
+            type: 'bar',
+            data: { labels: ports.labels, datasets: [{ label: 'Hits', data: ports.data, backgroundColor:'#20c997', borderRadius:3 }] },
+            options: { plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#adb5bd',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}, animation:{duration:600} }
+          });
+        } else {
+          remotePortChart.data.labels = ports.labels;
+          remotePortChart.data.datasets[0].data = ports.data;
+          remotePortChart.update();
+        }
+      }
+
+      const srcBody = document.getElementById('remoteSourcesBody');
+      if (srcBody) {
+        if (!d.top_sources || !d.top_sources.length) {
+          srcBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Waiting for remote sensor events</td></tr>';
+        } else {
+          srcBody.innerHTML = d.top_sources.map(s => `
+            <tr>
+              <td><code style="font-size:10px">${escHtml(s.src_ip || '—')}</code></td>
+              <td style="font-size:11px">${escHtml(s.country || 'Unknown')}</td>
+              <td>${protoBadge(s.protocol || 'unknown')}</td>
+              <td><strong style="color:#8957e5">${(s.hits || 0).toLocaleString()}</strong></td>
+              <td>${sevBadge(s.severity || 'low')}</td>
+            </tr>`).join('');
+        }
+      }
+
+      const credBody = document.getElementById('remoteCredsBody');
+      if (credBody) {
+        if (!d.credentials || !d.credentials.length) {
+          credBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No remote credentials yet</td></tr>';
+        } else {
+          credBody.innerHTML = d.credentials.map(c => `
+            <tr>
+              <td><code style="font-size:10px">${escHtml(c.username || '—')}</code></td>
+              <td><code style="font-size:10px">${escHtml(c.password || '—')}</code></td>
+              <td><strong>${(c.attempts || 0).toLocaleString()}</strong></td>
+            </tr>`).join('');
+        }
+      }
+    } catch(e) {}
+  }
+
+  // ═══════════════════════ GEOGRAPHIC INTELLIGENCE ════════════════════════
+  let geoBarChart = null;
+  async function loadGeographicIntel() {
+    try {
+      const d = await apiFetch(sensorParamFor('/api/dashboard/geographic-intel'));
+      const tbody = document.getElementById('geoCountryBody');
+      if (tbody) {
+        if (!d.countries || !d.countries.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">No geo-enriched data yet. Use public source IPs and wait for enrichment.</td></tr>';
+        } else {
+          tbody.innerHTML = d.countries.map((c, i) => `
+            <tr>
+              <td style="color:#6c757d">${i+1}</td>
+              <td style="font-size:11px;font-weight:600">${escHtml(c.country || 'Unknown')} ${c.country_code ? `<span style="color:#6c757d">(${escHtml(c.country_code)})</span>` : ''}</td>
+              <td><strong>${(c.events || 0).toLocaleString()}</strong></td>
+              <td style="font-size:11px">${(c.unique_ips || 0).toLocaleString()}</td>
+              <td><span class="badge ${c.high_severity ? 'badge-danger' : 'badge-secondary'}">${(c.high_severity || 0).toLocaleString()}</span></td>
+              <td>${protoBadge(c.top_protocol || 'unknown')}</td>
+            </tr>`).join('');
+        }
+      }
+
+      const geoCtx = document.getElementById('geoBarChart');
+      const bar = d.bar || { labels: [], data: [] };
+      if (geoCtx) {
+        if (!geoBarChart) {
+          geoBarChart = new Chart(geoCtx, {
+            type: 'bar',
+            data: { labels: bar.labels, datasets: [{ label: 'Events', data: bar.data, backgroundColor:'#20c997', borderRadius:3 }] },
+            options: { indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#adb5bd',font:{size:10}},grid:{display:false}}}, animation:{duration:600} }
+          });
+        } else {
+          geoBarChart.data.labels = bar.labels;
+          geoBarChart.data.datasets[0].data = bar.data;
+          geoBarChart.update();
         }
       }
     } catch(e) {}
@@ -1984,7 +2327,7 @@
     loadMalwareFeed(); loadSensorStatus(); loadHeatmap();
     loadUniqueAttackers(); loadLoginBreakdown();
     loadRecentEvents(); loadHighSeverityNotifs(); loadMlStats();
-    loadDionaeaDeep(); loadNetworkIntel(); loadCredentialAnalysis();
+    loadCowrieDeep(); loadDionaeaDeep(); loadRemoteDeep(); loadGeographicIntel(); loadNetworkIntel(); loadCredentialAnalysis();
 
     // ── Fast: stats every 5 s ─────────────────────────────────────────────
     setInterval(() => apiFetch(sensorParamFor('/api/dashboard/stats')).then(updateStatsBoxes).catch(()=>{}), 5000);
@@ -1999,7 +2342,7 @@
     }, 30000);
 
     // ── Very slow extra panels: every 90 s ────────────────────────────────
-    setInterval(() => { loadDionaeaDeep(); loadNetworkIntel(); loadCredentialAnalysis(); }, 90000);
+    setInterval(() => { loadCowrieDeep(); loadDionaeaDeep(); loadRemoteDeep(); loadGeographicIntel(); loadNetworkIntel(); loadCredentialAnalysis(); }, 90000);
 
     // ── Very slow: map, timeline, heatmap every 60 s ──────────────────────
     setInterval(() => { loadMapData(); loadTimelineData($('#timeRange').val()); loadHeatmap(); loadMlStats(); }, 60000);

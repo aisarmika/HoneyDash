@@ -12,7 +12,7 @@ Configuration (edit the section below, or set as environment variables):
     HONEYDASH_URL      — https://yourdomain.com  (no trailing slash)
     SENSOR_API_KEY     — the key from HoneyDash's SENSOR_API_KEY env var
     COWRIE_LOG_PATH    — path to cowrie.json on this machine
-    SENSOR_NAME        — friendly name shown in HoneyDash (e.g. "friends-vps")
+    SENSOR_NAME        — use "remote" so HoneyDash's Remote dashboard filter shows it
 
 Requirements:
     pip install requests
@@ -28,7 +28,7 @@ import requests
 HONEYDASH_URL   = os.getenv("HONEYDASH_URL",   "https://yourdomain.com")
 SENSOR_API_KEY  = os.getenv("SENSOR_API_KEY",  "honeydash-sensor-key-change-me")
 COWRIE_LOG_PATH = os.getenv("COWRIE_LOG_PATH", "/home/cowrie/var/log/cowrie/cowrie.json")
-SENSOR_NAME     = os.getenv("SENSOR_NAME",     "remote-sensor-1")
+SENSOR_NAME     = os.getenv("SENSOR_NAME",     "remote")
 BATCH_SIZE      = int(os.getenv("BATCH_SIZE",  "20"))    # events to buffer before sending
 FLUSH_INTERVAL  = float(os.getenv("FLUSH_INTERVAL", "5"))  # seconds between forced flushes
 # ─────────────────────────────────────────────────────────────────────────────

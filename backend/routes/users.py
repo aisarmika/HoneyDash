@@ -120,6 +120,18 @@ async def create_user(
     return _user_out(user)
 
 
+@router.get("/me")
+async def get_me(
+    db: AsyncSession = Depends(get_db),
+    email: str = Depends(get_current_user),
+):
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return _user_out(user)
+
+
 @router.put("/{user_id}")
 async def update_user(
     user_id: int,
@@ -160,15 +172,3 @@ async def delete_user(
         raise HTTPException(status_code=404, detail="User not found")
     await db.delete(user)
     await db.commit()
-
-
-@router.get("/me")
-async def get_me(
-    db: AsyncSession = Depends(get_db),
-    email: str = Depends(get_current_user),
-):
-    result = await db.execute(select(User).where(User.email == email))
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return _user_out(user)
