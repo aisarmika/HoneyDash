@@ -600,7 +600,7 @@
                             : sensorKey ? 'sensor-remote' : 'sensor-unknown';
             const sensorLabel = s.sensor || '-';
             const sensorBadge = `<span class="sensor-badge ${sensorClass}">${sensorLabel}</span>`;
-            return `<tr data-session="${s.session_id}">
+            return `<tr data-session="${s.session_id}" data-ip="${s.src_ip || ''}">
                 <td><code style="font-size:10px">${s.session_id.substring(0,12)}…</code></td>
                 <td class="col-nowrap" style="font-size:11px">${ts}</td>
                 <td><code>${s.src_ip}</code></td>
@@ -627,33 +627,32 @@
 
         var sessionsTable;
 
-        // WebSocket for real-time session prepend
+        // WebSocket refreshes summaries; the table stays session-level, not event-level.
         let ws = null, wsReconnectDelay = 1000;
+        let sessionsRefreshTimer = null;
+
+        function hasActiveFilters() {
+            return ['fSearch','fSeverity','fType','fProtocol','fSensor','fStart','fEnd']
+                .some(id => (document.getElementById(id).value || '').trim());
+        }
+
+        function scheduleSessionsRefresh() {
+            if (hasActiveFilters()) {
+                document.getElementById('filterStatus').textContent =
+                    'New activity received. Reset or re-apply filters to refresh.';
+                return;
+            }
+            clearTimeout(sessionsRefreshTimer);
+            sessionsRefreshTimer = setTimeout(loadSessions, 1200);
+        }
 
         function connectWebSocket() {
             ws = new WebSocket(WS_URL + '?token=' + encodeURIComponent(token));
             ws.onopen  = function () { wsReconnectDelay = 1000; };
             ws.onmessage = function (e) {
                 const msg = JSON.parse(e.data);
-                if (msg.type === 'new_event' && msg.data.event_id === 'cowrie.session.connect') {
-                    // New session — build a minimal session object and prepend
-                    const ev = msg.data;
-                    const pseudo = {
-                        session_id: ev.session_id,
-                        start_time: ev.timestamp,
-                        src_ip: ev.src_ip,
-                        country: ev.country || null,
-                        country_code: ev.country_code || null,
-                        attack_type: ev.attack_type || 'SSH Connect',
-                        dst_port: ev.dst_port || 22,
-                        duration_display: '-',
-                        login_attempts: 0,
-                        severity: ev.severity || 'low',
-                    };
-                    sessionsTable.row.add($(buildRow(pseudo))[0]).draw(false);
-                    // Update total count
-                    const cur = parseInt($('#statTotalSessions').text().replace(/,/g,'')) || 0;
-                    $('#statTotalSessions').text((cur + 1).toLocaleString());
+                if (msg.type === 'new_event') {
+                    scheduleSessionsRefresh();
                 }
                 if (msg.type === 'enrichment_update') {
                     const flag = countryFlag(msg.data.country_code);
@@ -710,11 +709,54 @@
 
             loadSessions();
             connectWebSocket();
+            $('#fSeverity,#fType,#fProtocol,#fSensor,#fStart,#fEnd').on('change', applyFilters);
         });
 
         // ── Filter helpers ──────────────────────────────────────────────────────
+        function filterValues() {
+            return {
+                search:   document.getElementById('fSearch').value.trim().toLowerCase(),
+                severity: document.getElementById('fSeverity').value.toLowerCase(),
+                type:     document.getElementById('fType').value.toLowerCase(),
+                protocol: document.getElementById('fProtocol').value.toLowerCase(),
+                sensor:   document.getElementById('fSensor').value.toLowerCase(),
+                start:    document.getElementById('fStart').value,
+                end:      document.getElementById('fEnd').value,
+            };
+        }
+
+        function includesText(value, query) {
+            return String(value || '').toLowerCase().includes(query);
+        }
+
+        function matchesWords(value, query) {
+            const normalized = String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+            return String(query || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ')
+                .split(/\s+/)
+                .filter(Boolean)
+                .every(part => normalized.includes(part));
+        }
+
+        function sessionMatchesFilters(s) {
+            const f = filterValues();
+            if (f.severity && String(s.severity || '').toLowerCase() !== f.severity) return false;
+            if (f.protocol && String(s.protocol || '').toLowerCase() !== f.protocol) return false;
+            if (f.sensor && String(s.sensor || '').toLowerCase() !== f.sensor) return false;
+            if (f.type && !matchesWords(s.attack_type, f.type)) return false;
+            if (f.start && (!s.start_time || new Date(s.start_time) < new Date(f.start + 'T00:00:00'))) return false;
+            if (f.end && (!s.start_time || new Date(s.start_time) > new Date(f.end + 'T23:59:59'))) return false;
+            if (f.search) {
+                const haystack = [
+                    s.session_id, s.src_ip, s.country, s.city, s.sensor,
+                    s.protocol, s.attack_type, s.severity, s.dst_port
+                ].join(' ');
+                if (!matchesWords(haystack, f.search)) return false;
+            }
+            return true;
+        }
+
         function buildFilterQS() {
-            const params = new URLSearchParams({ limit: 500, offset: 0 });
+            const params = new URLSearchParams({ limit: 100, offset: 0 });
             const sev      = document.getElementById('fSeverity').value;
             const type     = document.getElementById('fType').value;
             const protocol = document.getElementById('fProtocol').value;
@@ -725,49 +767,15 @@
             if (sev)      params.set('severity',    sev);
             if (type)     params.set('attack_type', type);
             if (protocol) params.set('protocol',    protocol);
-            if (sensor)   params.set('src_ip',      '');   // sensor filtering handled client-side
+            if (sensor)   params.set('sensor',      sensor);
             if (start)    params.set('start',        start);
             if (end)      params.set('end',          end);
             if (ip && ip.match(/^\d/)) params.set('src_ip', ip);
+            else if (ip) params.set('q', ip);
             return params.toString();
         }
 
         async function applyFilters() {
-            const q    = document.getElementById('fSearch').value.trim();
-            const isIP = q && q.match(/^\d/);
-
-            // If search term looks like text (not an IP), use /events/search
-            if (q && !isIP) {
-                try {
-                    document.getElementById('filterStatus').textContent = 'Searching…';
-                    const d = await apiFetch('/api/events/search?q=' + encodeURIComponent(q) + '&limit=200');
-                    // Group events by session_id and display
-                    const sessionSet = new Map();
-                    d.items.forEach(ev => {
-                        if (!sessionSet.has(ev.session_id)) {
-                            sessionSet.set(ev.session_id, {
-                                session_id: ev.session_id,
-                                start_time: ev.timestamp,
-                                src_ip: ev.src_ip,
-                                country: ev.country,
-                                country_code: ev.country_code,
-                                attack_type: ev.attack_type,
-                                dst_port: ev.dst_port,
-                                duration_display: '-',
-                                login_attempts: 0,
-                                severity: ev.severity,
-                            });
-                        }
-                    });
-                    sessionsTable.clear();
-                    sessionSet.forEach(s => sessionsTable.row.add($(buildRow(s))[0]));
-                    sessionsTable.draw();
-                    document.getElementById('filterStatus').textContent =
-                        `Found ${d.total} events across ${sessionSet.size} sessions matching "${q}"`;
-                } catch(e) { document.getElementById('filterStatus').textContent = 'Search failed'; }
-                return;
-            }
-
             loadSessions();
         }
 
@@ -782,22 +790,24 @@
             try {
                 const qs = buildFilterQS();
                 const d = await apiFetch('/api/sessions?' + qs);
+                const items = Array.isArray(d.items) ? d.items.filter(sessionMatchesFilters) : [];
                 sessionsTable.clear();
-                if (d.items && d.items.length > 0) {
-                    d.items.forEach(s => sessionsTable.row.add($(buildRow(s))[0]));
+                if (items.length > 0) {
+                    items.forEach(s => sessionsTable.row.add($(buildRow(s))[0]));
                 }
                 sessionsTable.draw();
-                document.getElementById('filterStatus').textContent =
-                    d.total > 200 ? `Showing 200 of ${d.total} sessions` : '';
+                document.getElementById('filterStatus').textContent = hasActiveFilters()
+                    ? `Showing ${items.length} matching sessions`
+                    : (d.total > 100 ? `Showing 100 of ${d.total} sessions` : '');
 
                 // Stats from live API
                 apiFetch('/api/dashboard/stats').then(stats => {
                     $('#statTotalSessions').text((stats.total_sessions || 0).toLocaleString());
                     $('#statCountries').text((stats.countries_24h || 0).toLocaleString());
-                    if (d.items) {
-                        const highRisk = d.items.filter(s => s.severity === 'high').length;
+                    if (items) {
+                        const highRisk = items.filter(s => s.severity === 'high').length;
                         $('#statHighRisk').text(highRisk);
-                        const withDur = d.items.filter(s => s.duration_secs);
+                        const withDur = items.filter(s => s.duration_secs);
                         if (withDur.length) {
                             const avg = withDur.reduce((a, s) => a + s.duration_secs, 0) / withDur.length;
                             $('#statAvgDur').text((avg / 60).toFixed(1) + ' min');
@@ -915,7 +925,7 @@
         }
 
         function exportSessions() {
-            apiFetch('/api/sessions?limit=1000&offset=0').then(d => {
+            apiFetch('/api/sessions?limit=100&offset=0').then(d => {
                 const rows = [['Session ID','Start Time','Source IP','Country','Attack Type','Port','Duration','Login Attempts','Severity']];
                 d.items.forEach(s => rows.push([s.session_id, s.start_time, s.src_ip, s.country||'', s.attack_type||'', s.dst_port||'', s.duration_display||'', s.login_attempts, s.severity]));
                 const csv = rows.map(r => r.join(',')).join('\n');
