@@ -7,7 +7,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import AsyncSessionLocal, init_db
 from .routes import auth, dashboard, events, sessions, ws
-from .routes import attacker, honeypot_config, ingest, malware, notifications, reports, retention, upload, users
+from .routes import (
+    alert_rules,
+    attacker,
+    honeypot_config,
+    ingest,
+    malware,
+    notifications,
+    public,
+    remediation,
+    reports,
+    retention,
+    upload,
+    users,
+)
 from .services.broadcaster import start_stats_broadcaster
 from .services.dionaea_collector import start_dionaea_collector
 from .services.enrichment import start_enrichment_worker
@@ -27,6 +40,7 @@ async def lifespan(app: FastAPI):
             admin_email=settings.admin_email,
             admin_password_hash=settings.admin_password_hash,
         )
+        await alert_rules.seed_default_rules(db)
 
     asyncio.create_task(start_log_collector())
     asyncio.create_task(start_dionaea_collector())
@@ -68,11 +82,14 @@ app.include_router(malware.router,          prefix="/api/malware",             t
 # ── Configuration features ───────────────────────────────────────────────────
 app.include_router(honeypot_config.router,  prefix="/api/honeypot-config",     tags=["honeypot-config"])
 app.include_router(upload.router,           prefix="/api/upload",              tags=["upload"])
+app.include_router(alert_rules.router,      prefix="/api/alert-rules",         tags=["alert-rules"])
+app.include_router(remediation.router,      prefix="/api/remediation",         tags=["remediation"])
 
 # ── Remote sensor ingest ─────────────────────────────────────────────────────
 app.include_router(ingest.router,           prefix="/api/ingest",              tags=["ingest"])
 app.include_router(retention.router,        prefix="/api/retention",           tags=["retention"])
 app.include_router(notifications.router,    prefix="/api/notifications",       tags=["notifications"])
+app.include_router(public.router,           prefix="/api/public",              tags=["public"])
 
 # ── WebSocket ────────────────────────────────────────────────────────────────
 app.include_router(ws.router, tags=["websocket"])

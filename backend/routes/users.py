@@ -50,6 +50,13 @@ async def seed_admin_user(db: AsyncSession, admin_email: str, admin_password_has
     ))
     if count and count > 0:
         return
+    if not admin_password_hash:
+        admin_password_hash = _hash("admin")
+        print(
+            "[users] WARNING: ADMIN_PASSWORD_HASH is empty; seeded default "
+            "admin password as 'admin'. Change this in production.",
+            flush=True,
+        )
     admin = User(
         email=admin_email,
         password_hash=admin_password_hash,
