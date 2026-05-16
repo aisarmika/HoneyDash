@@ -76,6 +76,15 @@ EVENTID_TO_ATTACK_TYPE = {
 
 def _compute_event_severity(data: dict) -> str:
     eid = data.get("eventid", "")
+    if data.get("sensor") == "remote" or eid.startswith("remote."):
+        explicit = str(data.get("severity") or "").lower()
+        if explicit in ("low", "medium", "high"):
+            return explicit
+        if data.get("command") or data.get("command_input") or data.get("download_url") or data.get("url"):
+            return "high"
+        if data.get("username") or data.get("password") or "login" in eid:
+            return "medium"
+        return "low"
     # Cowrie rules
     if eid == "cowrie.login.success":
         return "high"
@@ -184,15 +193,17 @@ async def process_line(line: str):
         return
 
     eid = data.get("eventid", "")
-    if eid not in EVENTID_TO_ATTACK_TYPE:
+    sensor = data.get("sensor", "")
+    is_remote_custom = sensor == "remote" or eid.startswith("remote.")
+    if eid not in EVENTID_TO_ATTACK_TYPE and not is_remote_custom:
         return
 
     src_ip = data.get("src_ip", "")
-    session_id = data.get("session", "")
     timestamp = await _parse_timestamp(data.get("timestamp", ""))
-    sensor = data.get("sensor", "")
-    attack_type = EVENTID_TO_ATTACK_TYPE[eid]
-    severity = _compute_event_severity(data)
+    session_id = data.get("session") or data.get("session_id") or f"{sensor or 'sensor'}-{src_ip}-{int(timestamp.timestamp())}"
+    attack_type = EVENTID_TO_ATTACK_TYPE.get(eid) or data.get("attack_type") or eid.replace(".", " ").title() or "Remote Honeypot Event"
+    explicit_severity = str(data.get("severity") or "").lower()
+    severity = explicit_severity if explicit_severity in ("low", "medium", "high") else _compute_event_severity(data)
 
     async with AsyncSessionLocal() as db:
         # Upsert session row (create if missing)
@@ -235,6 +246,16 @@ async def process_line(line: str):
             elif eid in ("cowrie.session.file_download", "dionaea.download.captured"):
                 sess.files_downloaded = (sess.files_downloaded or 0) + 1
                 new_severity = "high"
+            elif is_remote_custom and (data.get("username") or data.get("password")):
+                sess.login_attempts = (sess.login_attempts or 0) + 1
+                if severity == "high":
+                    new_severity = "high"
+            elif is_remote_custom and (data.get("command") or data.get("command_input")):
+                sess.commands_run = (sess.commands_run or 0) + 1
+                new_severity = _upgrade_severity(new_severity, "high")
+            elif is_remote_custom and (data.get("download_url") or data.get("url")):
+                sess.files_downloaded = (sess.files_downloaded or 0) + 1
+                new_severity = "high"
             elif eid == "cowrie.session.closed":
                 sess.end_time = timestamp
                 sess.duration_secs = data.get("duration")
@@ -257,8 +278,8 @@ async def process_line(line: str):
                 protocol=protocol,
                 username=data.get("username"),
                 password=data.get("password"),
-                command_input=data.get("input"),
-                download_url=data.get("url"),
+                command_input=data.get("input") or data.get("command_input") or data.get("command"),
+                download_url=data.get("url") or data.get("download_url"),
                 download_path=data.get("outfile"),
                 duration=data.get("duration"),
                 raw_json=line,
@@ -296,7 +317,7 @@ async def process_line(line: str):
             "protocol": protocol,
             "username": data.get("username"),
             "password": data.get("password"),
-            "command_input": data.get("input"),
+            "command_input": data.get("input") or data.get("command_input") or data.get("command"),
             "severity": severity,
             "attack_type": attack_type,
             "country": enrichment.get("country") if enrichment else None,

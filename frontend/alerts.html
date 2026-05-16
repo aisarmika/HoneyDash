@@ -40,6 +40,8 @@
       padding: 10px; border-radius: 4px;
       font-size: 12px; max-height: 200px; overflow-y: auto;
     }
+    .investigation-actions .btn { margin: 1px; }
+    .note-chip { display:block; max-width:220px; color:#adb5bd; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   </style>
 </head>
 
@@ -195,7 +197,7 @@
               <div class="info-box">
                 <span class="info-box-icon bg-success elevation-1"><i class="fas fa-sign-in-alt"></i></span>
                 <div class="info-box-content">
-                  <span class="info-box-text">Login Successes (24h)</span>
+                  <span class="info-box-text">Escalated Alerts</span>
                   <span class="info-box-number" id="statLoginSuccess">—</span>
                 </div>
               </div>
@@ -226,9 +228,13 @@
                     <option value="dionaea-01">dionaea-01</option>
                     <option value="remote">Remote Sensor</option>
                 </select>
-                <button class="btn btn-sm btn-outline-secondary" id="ackAllBtn">
-                  <i class="fas fa-check-double"></i> Acknowledge All
-                </button>
+                <select id="fAlertStatus" class="form-control form-control-sm" onchange="alertOffset=0;loadAlerts(false)" style="width:150px;display:inline-block;margin-left:6px">
+                    <option value="">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="reviewed">Reviewed</option>
+                    <option value="escalated">Escalated</option>
+                    <option value="false_positive">False Positive</option>
+                </select>
                 <button class="btn btn-sm btn-outline-primary ml-1" onclick="exportAlerts()">
                   <i class="fas fa-download"></i> Export CSV
                 </button>
@@ -308,6 +314,28 @@
       </div>
     </div>
 
+    <div class="modal fade" id="noteModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-dark">
+            <h5 class="modal-title"><i class="fas fa-sticky-note mr-1"></i> Add Investigation Note</h5>
+            <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="noteEventId">
+            <div class="form-group">
+              <label>Analyst note</label>
+              <textarea id="noteText" class="form-control" rows="5" placeholder="Example: Confirmed brute-force pattern, source should be monitored."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary" onclick="saveNote()"><i class="fas fa-save mr-1"></i>Save Note</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <footer class="main-footer">
       <strong>HoneyDash SOC Platform</strong> <span style="color:#6e7681">— Cowrie · Dionaea · Remote Sensors · ML Anomaly Detection</span>
     </footer>
@@ -338,58 +366,108 @@
 
     function escapeHtml(str) {
       if (!str) return '';
-      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    const ackedIds = new Set();
+    function escapeAttr(str) {
+      return escapeHtml(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function showActionMessage(message, type) {
+      const cls = type || 'info';
+      const box = $(`<div class="alert alert-${cls} alert-dismissible fade show" style="position:fixed;right:18px;top:70px;z-index:3000;min-width:260px">
+        ${escapeHtml(message)}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>`);
+      $('body').append(box);
+      setTimeout(() => box.alert('close'), 3000);
+    }
 
     function buildAlertRow(ev, prepend) {
       const sev  = ev.severity || 'high';
       const ts   = ev.timestamp ? new Date(ev.timestamp).toLocaleString() : '-';
       const type = ev.attack_type || ev.event_id || '-';
+      const inv = ev.investigation || { status: 'open' };
 
       let details = '';
       if (ev.username)           details = `<code>${escapeHtml(ev.username)}</code>/<code>${escapeHtml(ev.password||'')}</code>`;
       else if (ev.command_input) details = `<code style="font-size:11px">${escapeHtml(ev.command_input.substring(0,40))}</code>`;
       else if (ev.download_url)  details = `<i class="fas fa-virus text-danger"></i> Download`;
 
-      const acked = ackedIds.has(ev.id);
-      const statusBadge = acked
-        ? '<span class="badge badge-success">Acknowledged</span>'
-        : '<span class="badge badge-secondary">Open</span>';
+      const statusMap = {
+        open: ['secondary', 'Open'],
+        reviewed: ['success', 'Reviewed'],
+        false_positive: ['info', 'False Positive'],
+        escalated: ['danger', 'Escalated'],
+      };
+      const [statusCls, statusLabel] = statusMap[inv.status || 'open'] || statusMap.open;
+      const note = inv.note ? `<span class="note-chip" title="${escapeHtml(inv.note)}"><i class="fas fa-sticky-note mr-1"></i>${escapeHtml(inv.note)}</span>` : '';
+      const statusBadge = `<span class="badge badge-${statusCls}">${statusLabel}</span>${note}`;
 
       let sKey = (ev.sensor||'').toLowerCase();
       let sCls = sKey.includes('cowrie') ? 'sensor-cowrie' : sKey.includes('dionaea') ? 'sensor-dionaea' : sKey ? 'sensor-remote' : 'sensor-unknown';
       const sensorBadge = `<span class="sensor-badge ${sCls}">${ev.sensor||'-'}</span>`;
 
-      return `<tr data-id="${ev.id}" data-ip="${ev.src_ip}" class="${prepend ? 'new-alert' : ''} ${acked ? 'acknowledged' : ''}">
+      return `<tr data-id="${ev.id}" data-ip="${escapeAttr(ev.src_ip)}" data-status="${escapeAttr(inv.status || 'open')}" data-note="${escapeAttr(inv.note || '')}" class="${prepend ? 'new-alert' : ''} ${(inv.status || 'open') !== 'open' ? 'acknowledged' : ''}">
         <td style="white-space:nowrap">${ts}</td>
-        <td><code>${ev.src_ip}</code></td>
-        <td class="country-cell">${ev.country || '<span class="text-muted">-</span>'}</td>
-        <td>${type}</td>
+        <td><code>${escapeHtml(ev.src_ip)}</code></td>
+        <td class="country-cell">${ev.country ? escapeHtml(ev.country) : '<span class="text-muted">-</span>'}</td>
+        <td>${escapeHtml(type)}</td>
         <td>${details || '<span class="text-muted">—</span>'}</td>
         <td>${sensorBadge}</td>
         <td><span class="badge badge-${sev}">${sev.charAt(0).toUpperCase()+sev.slice(1)}</span></td>
         <td class="status-cell">${statusBadge}</td>
-        <td>
-          <button class="btn btn-xs btn-info" onclick="viewDetails(${ev.id})"><i class="fas fa-eye"></i></button>
-          <button class="btn btn-xs btn-success ml-1" onclick="acknowledgeRow(${ev.id})"><i class="fas fa-check"></i></button>
+        <td class="investigation-actions">
+          <button type="button" class="btn btn-xs btn-info js-view-alert" data-id="${ev.id}" title="View details"><i class="fas fa-eye"></i></button>
+          <button type="button" class="btn btn-xs btn-success js-alert-action" data-id="${ev.id}" data-action="reviewed" title="Mark reviewed"><i class="fas fa-check"></i></button>
+          <button type="button" class="btn btn-xs btn-warning js-alert-action" data-id="${ev.id}" data-action="escalated" title="Escalate"><i class="fas fa-arrow-up"></i></button>
+          <button type="button" class="btn btn-xs btn-secondary js-alert-action" data-id="${ev.id}" data-action="false_positive" title="False positive"><i class="fas fa-ban"></i></button>
+          <button type="button" class="btn btn-xs btn-primary js-alert-note" data-id="${ev.id}" title="Add note"><i class="fas fa-sticky-note"></i></button>
         </td>
       </tr>`;
     }
 
-    function acknowledgeRow(id) {
-      ackedIds.add(id);
-      const row = $(`tr[data-id="${id}"]`);
-      row.addClass('acknowledged');
-      row.find('.status-cell').html('<span class="badge badge-success">Acknowledged</span>');
-      updateUnackedCount();
+    async function setAlertAction(id, action, note) {
+      try {
+        const r = await fetch(API_BASE + '/api/alerts/' + id + '/action', {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, note })
+        });
+        if (r.status === 401) {
+          localStorage.removeItem('hd_token');
+          window.location.href = 'login.html';
+          return;
+        }
+        if (!r.ok) {
+          let detail = 'Alert action failed';
+          try {
+            const err = await r.json();
+            detail = err.detail || detail;
+          } catch(e) {}
+          throw new Error(detail);
+        }
+        alertOffset = 0;
+        await loadAlerts(false);
+        await loadAlertStats();
+        const labels = { reviewed:'marked reviewed', false_positive:'marked false positive', escalated:'escalated', open:'reopened', note:'note saved' };
+        showActionMessage(`Alert ${labels[action] || 'updated'}.`, 'success');
+        return true;
+      } catch(e) {
+        showActionMessage(e.message || 'Alert action failed. Check backend is rebuilt and running.', 'danger');
+        return false;
+      }
     }
 
-    function updateUnackedCount() {
-      const total = $('#alertsTableBody tr[data-id]').length;
-      const acked = $('#alertsTableBody tr.acknowledged').length;
-      $('#statUnacked').text(total - acked);
+    function openNote(id) {
+      $('#noteEventId').val(id);
+      $('#noteText').val($(`tr[data-id="${id}"]`).attr('data-note') || '');
+      $('#noteModal').modal('show');
+    }
+
+    async function saveNote() {
+      const ok = await setAlertAction(parseInt($('#noteEventId').val(), 10), 'note', $('#noteText').val());
+      if (ok) $('#noteModal').modal('hide');
     }
 
     let alertOffset = 0;
@@ -398,8 +476,10 @@
     async function loadAlerts(append) {
       try {
         const sensor = $('#fAlertSensor').val() || '';
+        const status = $('#fAlertStatus').val() || '';
         const sensorParam = sensor ? '&sensor=' + encodeURIComponent(sensor) : '';
-        const d = await apiFetch('/api/events?limit=' + PAGE_SIZE + '&offset=' + alertOffset + '&severity=high' + sensorParam);
+        const statusParam = status ? '&status=' + encodeURIComponent(status) : '';
+        const d = await apiFetch('/api/alerts?limit=' + PAGE_SIZE + '&offset=' + alertOffset + '&severity=high' + sensorParam + statusParam);
         const items = d.items || [];
 
         if (!append) {
@@ -421,7 +501,6 @@
         alertOffset += items.length;
         $('#alertTableCount').text(alertOffset);
         $('#loadMoreBtn').toggle(items.length === PAGE_SIZE);
-        updateUnackedCount();
       } catch(e) {
         console.error('Failed to load alerts', e);
       }
@@ -430,8 +509,10 @@
     async function loadAlertStats() {
       try {
         const d = await apiFetch('/api/dashboard/stats');
+        const a = await apiFetch('/api/alerts/stats');
         $('#statCritical').text((d.high_severity_24h || 0).toLocaleString());
-        $('#statLoginSuccess').text((d.active_alerts || 0).toLocaleString());
+        $('#statUnacked').text((a.open || 0).toLocaleString());
+        $('#statLoginSuccess').text((a.escalated || 0).toLocaleString());
         $('#statMalware').text((d.files_24h || 0).toLocaleString());
       } catch(e) {}
     }
@@ -513,8 +594,8 @@
         if (ev.download_url)  html += `<p><strong>Malware URL:</strong> <code class="text-danger">${escapeHtml(ev.download_url)}</code></p>`;
         if (ev.raw_json)      html += `<details><summary class="text-muted" style="cursor:pointer">Raw JSON</summary><pre class="bg-light p-2 mt-1" style="font-size:11px;max-height:150px;overflow:auto">${escapeHtml(ev.raw_json)}</pre></details>`;
         html += `<div class="mt-3 text-right">
-          <button class="btn btn-sm btn-success" onclick="acknowledgeRow(${ev.id}); $('#sessionModal').modal('hide')">
-            <i class="fas fa-check"></i> Acknowledge &amp; Close
+          <button class="btn btn-sm btn-success" onclick="setAlertAction(${ev.id}, 'reviewed'); $('#sessionModal').modal('hide')">
+            <i class="fas fa-check"></i> Mark Reviewed &amp; Close
           </button>
         </div>`;
         $('#sessionDetails').html(html);
@@ -559,7 +640,7 @@
           const count = parseInt($('#alertTableCount').text() || 0) + 1;
           $('#alertTableCount').text(count);
           $('#statCritical').text(count);
-          updateUnackedCount();
+          loadAlertStats();
         }
         if (msg.type === 'enrichment_update') {
           $(`tr[data-ip="${msg.data.src_ip}"] .country-cell`).text(msg.data.country || '-');
@@ -596,12 +677,16 @@
 
       $('#loadMoreBtn').click(function () { loadAlerts(true); });
 
-      $('#ackAllBtn').click(function () {
-        $('#alertsTableBody tr[data-id]').each(function () {
-          ackedIds.add(parseInt($(this).data('id')));
-          $(this).addClass('acknowledged').find('.status-cell').html('<span class="badge badge-success">Acknowledged</span>');
-        });
-        updateUnackedCount();
+      $('#alertsTableBody').on('click', '.js-view-alert', function () {
+        viewDetails(parseInt($(this).data('id'), 10));
+      });
+
+      $('#alertsTableBody').on('click', '.js-alert-action', function () {
+        setAlertAction(parseInt($(this).data('id'), 10), $(this).data('action'));
+      });
+
+      $('#alertsTableBody').on('click', '.js-alert-note', function () {
+        openNote(parseInt($(this).data('id'), 10));
       });
 
       // Populate sidebar user panel from JWT

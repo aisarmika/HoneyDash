@@ -713,6 +713,107 @@ async def login_breakdown(
         return {"labels": [], "attempts": [], "successes": []}
 
 
+@router.get("/cowrie-deep")
+async def get_cowrie_deep(
+    sensor: str = Query(""),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Cowrie SSH session, command, and login details for the deep-dive card."""
+    try:
+        sensor_clause = "AND (:sensor = '' OR sensor = :sensor)"
+        cowrie_clause = """
+            AND (
+                :sensor != ''
+                OR sensor = 'cowrie-01'
+                OR event_id LIKE 'cowrie.%'
+                OR LOWER(COALESCE(protocol, '')) IN ('ssh', 'telnet')
+            )
+        """
+        params = {"sensor": sensor}
+
+        command_result = await db.execute(text(f"""
+            SELECT command_input AS command, COUNT(*)::int AS count
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '30 days'
+              AND command_input IS NOT NULL
+              AND TRIM(command_input) != ''
+              {sensor_clause}
+              {cowrie_clause}
+            GROUP BY command_input
+            ORDER BY count DESC
+            LIMIT 10
+        """), params)
+        command_rows = command_result.fetchall()
+
+        duration_result = await db.execute(text(f"""
+            SELECT
+              SUM(CASE WHEN COALESCE(duration_secs, 0) < 60 THEN 1 ELSE 0 END)::int AS lt_1m,
+              SUM(CASE WHEN COALESCE(duration_secs, 0) >= 60 AND COALESCE(duration_secs, 0) < 300 THEN 1 ELSE 0 END)::int AS m_1_5,
+              SUM(CASE WHEN COALESCE(duration_secs, 0) >= 300 AND COALESCE(duration_secs, 0) < 900 THEN 1 ELSE 0 END)::int AS m_5_15,
+              SUM(CASE WHEN COALESCE(duration_secs, 0) >= 900 THEN 1 ELSE 0 END)::int AS gt_15m
+            FROM sessions
+            WHERE start_time >= NOW() - INTERVAL '30 days'
+              {sensor_clause}
+              AND (
+                :sensor != ''
+                OR sensor = 'cowrie-01'
+                OR LOWER(COALESCE(protocol, '')) IN ('ssh', 'telnet')
+              )
+        """), params)
+        duration_row = duration_result.fetchone()
+
+        login_result = await db.execute(text(f"""
+            SELECT
+              COALESCE(SUM(login_attempts), 0)::int AS attempts,
+              SUM(CASE WHEN login_success THEN 1 ELSE 0 END)::int AS successes,
+              COALESCE(AVG(NULLIF(login_attempts, 0)), 0)::float AS avg_attempts,
+              SUM(CASE WHEN commands_run > 0 THEN 1 ELSE 0 END)::int AS command_sessions,
+              COUNT(*)::int AS total_sessions
+            FROM sessions
+            WHERE start_time >= NOW() - INTERVAL '30 days'
+              {sensor_clause}
+              AND (
+                :sensor != ''
+                OR sensor = 'cowrie-01'
+                OR LOWER(COALESCE(protocol, '')) IN ('ssh', 'telnet')
+              )
+        """), params)
+        login_row = login_result.fetchone()
+
+        attempts = int(login_row.attempts or 0) if login_row else 0
+        successes = int(login_row.successes or 0) if login_row else 0
+        return {
+            "commands": [
+                {"command": r.command, "count": int(r.count or 0)}
+                for r in command_rows
+            ],
+            "duration": {
+                "labels": ["<1m", "1-5m", "5-15m", "15m+"],
+                "data": [
+                    int(duration_row.lt_1m or 0),
+                    int(duration_row.m_1_5 or 0),
+                    int(duration_row.m_5_15 or 0),
+                    int(duration_row.gt_15m or 0),
+                ] if duration_row else [0, 0, 0, 0],
+            },
+            "login": {
+                "attempts": attempts,
+                "successes": successes,
+                "success_rate": round(successes / max(attempts, 1) * 100, 1),
+                "avg_attempts": round(float(login_row.avg_attempts or 0), 1) if login_row else 0,
+                "command_sessions": int(login_row.command_sessions or 0) if login_row else 0,
+                "total_sessions": int(login_row.total_sessions or 0) if login_row else 0,
+            },
+        }
+    except Exception:
+        return {
+            "commands": [],
+            "duration": {"labels": ["<1m", "1-5m", "5-15m", "15m+"], "data": [0, 0, 0, 0]},
+            "login": {"attempts": 0, "successes": 0, "success_rate": 0, "avg_attempts": 0, "command_sessions": 0, "total_sessions": 0},
+        }
+
+
 @router.get("/dionaea-deep")
 async def get_dionaea_deep(
     sensor: str = Query(""),
@@ -759,6 +860,53 @@ async def get_dionaea_deep(
         """), sensor_params)
         proto_rows = proto_result.fetchall()
 
+        service_result = await db.execute(text("""
+            SELECT UPPER(COALESCE(protocol, 'unknown')) AS service, COUNT(*)::int AS cnt
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND (:sensor = '' OR sensor = :sensor)
+              AND (
+                :sensor != ''
+                OR sensor = 'dionaea-01'
+                OR event_id LIKE 'dionaea.%'
+                OR LOWER(COALESCE(protocol, '')) IN ('http', 'https', 'ftp', 'smb', 'mysql', 'mssql', 'sip')
+              )
+            GROUP BY service
+            ORDER BY cnt DESC
+            LIMIT 8
+        """), sensor_params)
+        service_rows = service_result.fetchall()
+
+        file_type_result = await db.execute(text(f"""
+            SELECT COALESCE(file_type, 'Unknown') AS file_type, COUNT(*)::int AS cnt
+            FROM malware_samples
+            WHERE 1=1 {sensor_where}
+            GROUP BY file_type
+            ORDER BY cnt DESC
+            LIMIT 8
+        """), sensor_params)
+        file_type_rows = file_type_result.fetchall()
+
+        top_source_result = await db.execute(text("""
+            SELECT src_ip,
+                   UPPER(COALESCE(protocol, 'unknown')) AS protocol,
+                   COUNT(*)::int AS hits
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND src_ip IS NOT NULL
+              AND (:sensor = '' OR sensor = :sensor)
+              AND (
+                :sensor != ''
+                OR sensor = 'dionaea-01'
+                OR event_id LIKE 'dionaea.%'
+                OR LOWER(COALESCE(protocol, '')) IN ('http', 'https', 'ftp', 'smb', 'mysql', 'mssql', 'sip')
+              )
+            GROUP BY src_ip, protocol
+            ORDER BY hits DESC
+            LIMIT 10
+        """), sensor_params)
+        top_source_rows = top_source_result.fetchall()
+
         # Top malware families from VT
         family_result = await db.execute(text(f"""
             SELECT COALESCE(vt_family, 'Unknown') AS family, COUNT(*) AS cnt
@@ -801,6 +949,14 @@ async def get_dionaea_deep(
                 "labels": [r.proto.upper() for r in proto_rows],
                 "data": [r.cnt for r in proto_rows],
             },
+            "service": {
+                "labels": [r.service for r in service_rows],
+                "data": [r.cnt for r in service_rows],
+            },
+            "file_types": {
+                "labels": [r.file_type for r in file_type_rows],
+                "data": [r.cnt for r in file_type_rows],
+            },
             "families": {
                 "labels": [r.family for r in family_rows],
                 "data": [r.cnt for r in family_rows],
@@ -828,11 +984,17 @@ async def get_dionaea_deep(
                 }
                 for s in samples
             ],
+            "top_sources": [
+                {"src_ip": r.src_ip, "protocol": r.protocol, "hits": int(r.hits or 0)}
+                for r in top_source_rows
+            ],
         }
     except Exception as e:
         return {"total": 0, "unique_files": 0, "unique_ips": 0, "vt_detected": 0, "vt_rate": 0,
                 "timeline": {"labels": [], "data": []}, "protocol": {"labels": [], "data": []},
-                "families": {"labels": [], "data": []}, "vt_buckets": {"labels": [], "data": []}, "samples": []}
+                "service": {"labels": [], "data": []}, "file_types": {"labels": [], "data": []},
+                "families": {"labels": [], "data": []}, "vt_buckets": {"labels": [], "data": []},
+                "samples": [], "top_sources": []}
 
 
 @router.get("/top-isps")
@@ -866,6 +1028,202 @@ async def get_top_isps(
         }
     except Exception:
         return {"isps": []}
+
+
+@router.get("/geographic-intel")
+async def get_geographic_intel(
+    sensor: str = Query(""),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Country-level attack intelligence for the geographic intelligence card."""
+    try:
+        result = await db.execute(text("""
+            WITH country_events AS (
+              SELECT
+                COALESCE(ie.country, 'Unknown') AS country,
+                COALESCE(ie.country_code, '') AS country_code,
+                e.src_ip,
+                e.protocol,
+                e.severity,
+                e.id
+              FROM events e
+              JOIN ip_enrichments ie ON ie.ip_address = e.src_ip
+              WHERE e.timestamp >= NOW() - INTERVAL '7 days'
+                AND ie.country IS NOT NULL
+                AND (:sensor = '' OR e.sensor = :sensor)
+            ),
+            country_totals AS (
+              SELECT
+                country,
+                country_code,
+                COUNT(id)::int AS events,
+                COUNT(DISTINCT src_ip)::int AS unique_ips,
+                SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END)::int AS high_severity
+              FROM country_events
+              GROUP BY country, country_code
+            ),
+            protocol_rank AS (
+              SELECT
+                country,
+                UPPER(COALESCE(protocol, 'unknown')) AS protocol,
+                COUNT(*) AS protocol_events,
+                ROW_NUMBER() OVER (PARTITION BY country ORDER BY COUNT(*) DESC) AS rn
+              FROM country_events
+              GROUP BY country, protocol
+            )
+            SELECT
+              ct.country,
+              ct.country_code,
+              ct.unique_ips,
+              ct.events,
+              ct.high_severity,
+              COALESCE(pr.protocol, 'UNKNOWN') AS top_protocol
+            FROM country_totals ct
+            LEFT JOIN protocol_rank pr ON pr.country = ct.country AND pr.rn = 1
+            ORDER BY ct.events DESC
+            LIMIT 10
+        """), {"sensor": sensor})
+        rows = result.fetchall()
+        countries = [
+            {
+                "country": r.country,
+                "country_code": r.country_code,
+                "unique_ips": int(r.unique_ips or 0),
+                "events": int(r.events or 0),
+                "high_severity": int(r.high_severity or 0),
+                "top_protocol": r.top_protocol,
+            }
+            for r in rows
+        ]
+        return {
+            "countries": countries,
+            "bar": {
+                "labels": [c["country"] for c in countries],
+                "data": [c["events"] for c in countries],
+            },
+        }
+    except Exception:
+        return {"countries": [], "bar": {"labels": [], "data": []}}
+
+
+@router.get("/remote-deep")
+async def get_remote_deep(
+    sensor: str = Query(""),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Analyst summary for the remote/friend custom honeypot sensor."""
+    try:
+        target_sensor = sensor or "remote"
+        params = {"sensor": target_sensor}
+
+        stats_result = await db.execute(text("""
+            SELECT
+              COUNT(*)::int AS events_24h,
+              COUNT(DISTINCT src_ip)::int AS unique_ips,
+              SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END)::int AS high_severity,
+              COUNT(DISTINCT session_id)::int AS sessions,
+              MAX(timestamp) AS last_seen
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND sensor = :sensor
+        """), params)
+        stats = stats_result.fetchone()
+
+        event_type_result = await db.execute(text("""
+            SELECT COALESCE(attack_type, event_id, 'Unknown') AS label, COUNT(*)::int AS cnt
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND sensor = :sensor
+            GROUP BY label
+            ORDER BY cnt DESC
+            LIMIT 8
+        """), params)
+        event_type_rows = event_type_result.fetchall()
+
+        port_result = await db.execute(text("""
+            SELECT COALESCE(dst_port, 0)::int AS port, COUNT(*)::int AS cnt
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND sensor = :sensor
+            GROUP BY port
+            ORDER BY cnt DESC
+            LIMIT 8
+        """), params)
+        port_rows = port_result.fetchall()
+
+        source_result = await db.execute(text("""
+            SELECT e.src_ip,
+                   COALESCE(MAX(ie.country), 'Unknown') AS country,
+                   UPPER(COALESCE(MAX(e.protocol), 'unknown')) AS protocol,
+                   COUNT(*)::int AS hits,
+                   MAX(e.severity) AS severity
+            FROM events e
+            LEFT JOIN ip_enrichments ie ON ie.ip_address = e.src_ip
+            WHERE e.timestamp >= NOW() - INTERVAL '24 hours'
+              AND e.sensor = :sensor
+            GROUP BY e.src_ip
+            ORDER BY hits DESC
+            LIMIT 10
+        """), params)
+        source_rows = source_result.fetchall()
+
+        credential_result = await db.execute(text("""
+            SELECT COALESCE(username, '—') AS username,
+                   COALESCE(password, '—') AS password,
+                   COUNT(*)::int AS attempts
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '7 days'
+              AND sensor = :sensor
+              AND (username IS NOT NULL OR password IS NOT NULL)
+            GROUP BY username, password
+            ORDER BY attempts DESC
+            LIMIT 8
+        """), params)
+        credential_rows = credential_result.fetchall()
+
+        return {
+            "sensor": target_sensor,
+            "stats": {
+                "events_24h": int(stats.events_24h or 0) if stats else 0,
+                "unique_ips": int(stats.unique_ips or 0) if stats else 0,
+                "high_severity": int(stats.high_severity or 0) if stats else 0,
+                "sessions": int(stats.sessions or 0) if stats else 0,
+                "last_seen": stats.last_seen.isoformat() if stats and stats.last_seen else None,
+            },
+            "event_types": {
+                "labels": [r.label for r in event_type_rows],
+                "data": [int(r.cnt or 0) for r in event_type_rows],
+            },
+            "ports": {
+                "labels": [str(r.port) for r in port_rows],
+                "data": [int(r.cnt or 0) for r in port_rows],
+            },
+            "top_sources": [
+                {
+                    "src_ip": r.src_ip,
+                    "country": r.country,
+                    "protocol": r.protocol,
+                    "hits": int(r.hits or 0),
+                    "severity": r.severity or "low",
+                }
+                for r in source_rows
+            ],
+            "credentials": [
+                {"username": r.username, "password": r.password, "attempts": int(r.attempts or 0)}
+                for r in credential_rows
+            ],
+        }
+    except Exception:
+        return {
+            "sensor": sensor or "remote",
+            "stats": {"events_24h": 0, "unique_ips": 0, "high_severity": 0, "sessions": 0, "last_seen": None},
+            "event_types": {"labels": [], "data": []},
+            "ports": {"labels": [], "data": []},
+            "top_sources": [],
+            "credentials": [],
+        }
 
 
 @router.get("/repeat-attackers")

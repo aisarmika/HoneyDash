@@ -8,6 +8,7 @@ from .config import settings
 from .database import AsyncSessionLocal, init_db
 from .routes import auth, dashboard, events, sessions, ws
 from .routes import (
+    alerts,
     alert_rules,
     attacker,
     honeypot_config,
@@ -71,6 +72,7 @@ app.include_router(users.router,            prefix="/api/users",               t
 app.include_router(dashboard.router,        prefix="/api/dashboard",           tags=["dashboard"])
 app.include_router(events.router,           prefix="/api/events",              tags=["events"])
 app.include_router(sessions.router,         prefix="/api/sessions",            tags=["sessions"])
+app.include_router(alerts.router,           prefix="/api/alerts",              tags=["alerts"])
 
 # ── Attacker profile ─────────────────────────────────────────────────────────
 app.include_router(attacker.router,         prefix="/api/attacker",            tags=["attacker"])

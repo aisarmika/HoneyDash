@@ -101,6 +101,23 @@ class AlertRule(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
+class AlertInvestigation(Base):
+    __tablename__ = "alert_investigations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_id = Column(Integer, ForeignKey("events.id"), unique=True, nullable=False, index=True)
+    status = Column(String(30), nullable=False, default="open")  # open|reviewed|false_positive|escalated
+    note = Column(Text, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    false_positive_at = Column(DateTime, nullable=True)
+    escalated_at = Column(DateTime, nullable=True)
+    updated_by = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    event = relationship("Event")
+
+
 class NotificationConfig(Base):
     __tablename__ = "notification_config"
 
