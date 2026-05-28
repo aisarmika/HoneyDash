@@ -4,11 +4,9 @@
   const host = location.hostname;
   const frontendPort = location.port;
 
-  // Docker Compose exposes the static frontend on :8090 and FastAPI on :8000.
-  // If a reverse proxy serves everything on one origin, use the same origin.
-  const backendOrigin = frontendPort === '8090'
-    ? `${protocol}//${host}:8000`
-    : location.origin;
+  // nginx proxies /api/, /auth/, and /ws to the backend container internally.
+  // Always use the same origin so all requests go through nginx on port 8090.
+  const backendOrigin = location.origin;
 
   window._HD_API = backendOrigin;
   window._HD_WS = `${wsProtocol}//${new URL(backendOrigin).host}/ws`;
