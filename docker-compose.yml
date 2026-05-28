@@ -60,7 +60,7 @@ services:
       - "2222:2222"   # SSH honeypot  (forward router port 22 → 2222 for real traffic)
       - "2223:2223"   # Telnet honeypot
     volumes:
-      - cowrie_logs:/cowrie/var/log/cowrie
+      - cowrie_logs:/cowrie/cowrie-git/var/log/cowrie
     networks:
       - honeydash-net
 
