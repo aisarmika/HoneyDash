@@ -3,7 +3,7 @@
   if (!sidebar || document.getElementById('hdSocSidebar')) return;
 
   const API = window._HD_API || `${location.protocol}//${location.hostname}:8000`;
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('hd_token');
 
   function headers() {
     return token ? { Authorization: 'Bearer ' + token } : {};

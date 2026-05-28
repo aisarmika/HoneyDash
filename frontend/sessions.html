@@ -925,16 +925,26 @@
             $('#remediationModal').modal('show');
         }
 
-        function exportSessions() {
-            apiFetch('/api/sessions?limit=100&offset=0').then(d => {
-                const rows = [['Session ID','Start Time','Source IP','Country','Attack Type','Port','Duration','Login Attempts','Severity']];
-                d.items.forEach(s => rows.push([s.session_id, s.start_time, s.src_ip, s.country||'', s.attack_type||'', s.dst_port||'', s.duration_display||'', s.login_attempts, s.severity]));
-                const csv = rows.map(r => r.join(',')).join('\n');
+        function exportSessions(format = 'csv') {
+            apiFetch('/api/sessions?limit=500&offset=0').then(d => {
+                const items = d.items || [];
+                if (!items.length) { alert('No sessions to export.'); return; }
                 const a = document.createElement('a');
-                a.href = 'data:text/csv,' + encodeURIComponent(csv);
-                a.download = 'sessions_export.csv';
+                if (format === 'json') {
+                    a.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(items, null, 2));
+                    a.download = 'sessions_export.json';
+                } else {
+                    const rows = [['Session ID','Start Time','Source IP','Country','Attack Type','Port','Duration','Login Attempts','Severity']];
+                    items.forEach(s => rows.push([
+                        s.session_id, s.start_time, s.src_ip, s.country||'',
+                        s.attack_type||'', s.dst_port||'', s.duration_display||'',
+                        s.login_attempts, s.severity
+                    ]));
+                    a.href = 'data:text/csv,' + encodeURIComponent(rows.map(r => r.join(',')).join('\n'));
+                    a.download = 'sessions_export.csv';
+                }
                 a.click();
-            });
+            }).catch(e => alert('Export failed: ' + e.message));
         }
 
         function viewAttackerProfile() {
