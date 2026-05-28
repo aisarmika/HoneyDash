@@ -73,13 +73,13 @@ services:
     container_name: honeydash-dionaea
     restart: unless-stopped
     ports:
-      - "2121:21"        # FTP honeypot  (host 2121; host port 21 in use)
+      - "2121:21"        # FTP honeypot
       - "42:42"          # Nameserver (old, targeted by scanners)
-      - "8880:80"        # HTTP exploit listener  (use 8880 to avoid conflict with nginx:80)
-      - "4443:443"       # HTTPS exploit listener
-      - "4445:445"       # SMB honeypot (host 4445; Windows uses 445)
+      - "8880:80"        # HTTP exploit listener (host 80 taken by web server)
+      - "4443:443"       # HTTPS exploit listener (host 443 taken)
+      - "445:445"        # SMB/EternalBlue honeypot (standard port — attracts worm scanners)
       - "1433:1433"      # Microsoft SQL Server
-      - "33306:3306"     # MySQL honeypot (host 33306 to avoid local MySQL conflict)
+      - "33306:3306"     # MySQL honeypot (host 3306 loopback conflict)
       - "5060:5060/udp"  # SIP VoIP scanning
       - "5061:5061"      # SIP TLS
     volumes:
