@@ -386,6 +386,7 @@ async def get_top_credentials(
 @router.get("/heatmap")
 async def get_heatmap(
     days: int = Query(7, ge=1, le=90),
+    sensor: str = Query(""),
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ):
@@ -402,11 +403,12 @@ async def get_heatmap(
             JOIN ip_enrichments ip ON ip.ip_address = ev.src_ip
             WHERE ev.timestamp >= :cutoff
               AND ip.country IS NOT NULL
+              AND (:sensor = '' OR ev.sensor = :sensor)
             GROUP BY ip.country, EXTRACT(HOUR FROM ev.timestamp)::int
             ORDER BY SUM(COUNT(*)) OVER (PARTITION BY ip.country) DESC
             """
         ),
-        {"cutoff": cutoff},
+        {"cutoff": cutoff, "sensor": sensor},
     )
     rows = result.fetchall()
 
@@ -430,10 +432,11 @@ async def get_heatmap(
 
 @router.get("/map")
 async def get_map(
+    sensor: str = Query(""),
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ):
-    result = await db.execute(
+    q = (
         select(
             IPEnrichment.country,
             IPEnrichment.country_code,
@@ -446,7 +449,11 @@ async def get_map(
             IPEnrichment.latitude.isnot(None),
             IPEnrichment.longitude.isnot(None),
         )
-        .group_by(
+    )
+    if sensor:
+        q = q.where(Session.sensor == sensor)
+    q = (
+        q.group_by(
             IPEnrichment.country,
             IPEnrichment.country_code,
             IPEnrichment.latitude,
@@ -455,6 +462,7 @@ async def get_map(
         .order_by(func.count(Session.id).desc())
         .limit(100)
     )
+    result = await db.execute(q)
     rows = result.fetchall()
     return {
         "markers": [
@@ -599,33 +607,34 @@ async def get_sensors(
 
 @router.get("/ml-stats")
 async def get_ml_stats(
+    sensor: str = Query(""),
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ):
     """ML anomaly detection statistics."""
     try:
-        total = await db.scalar(select(func.count(Session.id))) or 0
-        anomaly_count = (
-            await db.scalar(
-                select(func.count(Session.id)).where(Session.is_anomaly == True)  # noqa: E712
-            )
-            or 0
-        )
+        total_q = select(func.count(Session.id))
+        anomaly_q = select(func.count(Session.id)).where(Session.is_anomaly == True)  # noqa: E712
+        top_q = select(
+            Session.session_id,
+            Session.src_ip,
+            Session.attack_type,
+            Session.login_attempts,
+            Session.commands_run,
+            Session.anomaly_score,
+            Session.start_time,
+        ).where(Session.is_anomaly == True)  # noqa: E712
+        if sensor:
+            total_q = total_q.where(Session.sensor == sensor)
+            anomaly_q = anomaly_q.where(Session.sensor == sensor)
+            top_q = top_q.where(Session.sensor == sensor)
+
+        total = await db.scalar(total_q) or 0
+        anomaly_count = await db.scalar(anomaly_q) or 0
         anomaly_rate = round(anomaly_count / max(total, 1) * 100, 1)
 
         top_result = await db.execute(
-            select(
-                Session.session_id,
-                Session.src_ip,
-                Session.attack_type,
-                Session.login_attempts,
-                Session.commands_run,
-                Session.anomaly_score,
-                Session.start_time,
-            )
-            .where(Session.is_anomaly == True)  # noqa: E712
-            .order_by(Session.anomaly_score.asc())
-            .limit(10)
+            top_q.order_by(Session.anomaly_score.asc()).limit(10)
         )
         top_anomalies = [
             {
@@ -781,8 +790,44 @@ async def get_cowrie_deep(
         """), params)
         login_row = login_result.fetchone()
 
+        intensity_result = await db.execute(text(f"""
+            SELECT
+              SUM(CASE WHEN login_attempts BETWEEN 1 AND 5 THEN 1 ELSE 0 END)::int AS low,
+              SUM(CASE WHEN login_attempts BETWEEN 6 AND 20 THEN 1 ELSE 0 END)::int AS medium,
+              SUM(CASE WHEN login_attempts BETWEEN 21 AND 100 THEN 1 ELSE 0 END)::int AS high,
+              SUM(CASE WHEN login_attempts > 100 THEN 1 ELSE 0 END)::int AS extreme
+            FROM sessions
+            WHERE start_time >= NOW() - INTERVAL '30 days'
+              {sensor_clause}
+              AND (
+                :sensor != ''
+                OR sensor = 'cowrie-01'
+                OR LOWER(COALESCE(protocol, '')) IN ('ssh', 'telnet')
+              )
+        """), params)
+        intensity_row = intensity_result.fetchone()
+
+        hourly_result = await db.execute(text("""
+            SELECT EXTRACT(HOUR FROM timestamp)::int AS hour, COUNT(*)::int AS cnt
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND (:sensor = '' OR sensor = :sensor)
+              AND (
+                :sensor != ''
+                OR sensor = 'cowrie-01'
+                OR event_id LIKE 'cowrie.%'
+                OR LOWER(COALESCE(protocol, '')) IN ('ssh', 'telnet')
+              )
+            GROUP BY hour
+            ORDER BY hour
+        """), params)
+        hourly_slots = [0] * 24
+        for row in hourly_result.fetchall():
+            hourly_slots[int(row.hour)] = int(row.cnt or 0)
+
         attempts = int(login_row.attempts or 0) if login_row else 0
         successes = int(login_row.successes or 0) if login_row else 0
+        failures = max(attempts - successes, 0)
         return {
             "commands": [
                 {"command": r.command, "count": int(r.count or 0)}
@@ -800,17 +845,30 @@ async def get_cowrie_deep(
             "login": {
                 "attempts": attempts,
                 "successes": successes,
+                "failures": failures,
                 "success_rate": round(successes / max(attempts, 1) * 100, 1),
                 "avg_attempts": round(float(login_row.avg_attempts or 0), 1) if login_row else 0,
                 "command_sessions": int(login_row.command_sessions or 0) if login_row else 0,
                 "total_sessions": int(login_row.total_sessions or 0) if login_row else 0,
             },
+            "intensity": {
+                "labels": ["1-5", "6-20", "21-100", "100+"],
+                "data": [
+                    int(intensity_row.low or 0),
+                    int(intensity_row.medium or 0),
+                    int(intensity_row.high or 0),
+                    int(intensity_row.extreme or 0),
+                ] if intensity_row else [0, 0, 0, 0],
+            },
+            "hourly": {"labels": [f"{h:02d}:00" for h in range(24)], "data": hourly_slots},
         }
     except Exception:
         return {
             "commands": [],
             "duration": {"labels": ["<1m", "1-5m", "5-15m", "15m+"], "data": [0, 0, 0, 0]},
-            "login": {"attempts": 0, "successes": 0, "success_rate": 0, "avg_attempts": 0, "command_sessions": 0, "total_sessions": 0},
+            "login": {"attempts": 0, "successes": 0, "failures": 0, "success_rate": 0, "avg_attempts": 0, "command_sessions": 0, "total_sessions": 0},
+            "intensity": {"labels": ["1-5", "6-20", "21-100", "100+"], "data": [0, 0, 0, 0]},
+            "hourly": {"labels": [f"{h:02d}:00" for h in range(24)], "data": [0] * 24},
         }
 
 
@@ -907,6 +965,41 @@ async def get_dionaea_deep(
         """), sensor_params)
         top_source_rows = top_source_result.fetchall()
 
+        port_result = await db.execute(text("""
+            SELECT COALESCE(dst_port, 0)::int AS port, COUNT(*)::int AS cnt
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND (:sensor = '' OR sensor = :sensor)
+              AND (
+                :sensor != ''
+                OR sensor = 'dionaea-01'
+                OR event_id LIKE 'dionaea.%'
+                OR LOWER(COALESCE(protocol, '')) IN ('http', 'https', 'ftp', 'smb', 'mysql', 'mssql', 'sip')
+              )
+            GROUP BY port
+            ORDER BY cnt DESC
+            LIMIT 8
+        """), sensor_params)
+        port_rows = port_result.fetchall()
+
+        hourly_result = await db.execute(text("""
+            SELECT EXTRACT(HOUR FROM timestamp)::int AS hour, COUNT(*)::int AS cnt
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND (:sensor = '' OR sensor = :sensor)
+              AND (
+                :sensor != ''
+                OR sensor = 'dionaea-01'
+                OR event_id LIKE 'dionaea.%'
+                OR LOWER(COALESCE(protocol, '')) IN ('http', 'https', 'ftp', 'smb', 'mysql', 'mssql', 'sip')
+              )
+            GROUP BY hour
+            ORDER BY hour
+        """), sensor_params)
+        hourly_slots = [0] * 24
+        for row in hourly_result.fetchall():
+            hourly_slots[int(row.hour)] = int(row.cnt or 0)
+
         # Top malware families from VT
         family_result = await db.execute(text(f"""
             SELECT COALESCE(vt_family, 'Unknown') AS family, COUNT(*) AS cnt
@@ -957,6 +1050,11 @@ async def get_dionaea_deep(
                 "labels": [r.file_type for r in file_type_rows],
                 "data": [r.cnt for r in file_type_rows],
             },
+            "ports": {
+                "labels": [f"Port {r.port}" if r.port else "Unknown" for r in port_rows],
+                "data": [r.cnt for r in port_rows],
+            },
+            "hourly": {"labels": [f"{h:02d}:00" for h in range(24)], "data": hourly_slots},
             "families": {
                 "labels": [r.family for r in family_rows],
                 "data": [r.cnt for r in family_rows],
@@ -993,6 +1091,7 @@ async def get_dionaea_deep(
         return {"total": 0, "unique_files": 0, "unique_ips": 0, "vt_detected": 0, "vt_rate": 0,
                 "timeline": {"labels": [], "data": []}, "protocol": {"labels": [], "data": []},
                 "service": {"labels": [], "data": []}, "file_types": {"labels": [], "data": []},
+                "ports": {"labels": [], "data": []}, "hourly": {"labels": [], "data": []},
                 "families": {"labels": [], "data": []}, "vt_buckets": {"labels": [], "data": []},
                 "samples": [], "top_sources": []}
 
@@ -1183,6 +1282,30 @@ async def get_remote_deep(
         """), params)
         credential_rows = credential_result.fetchall()
 
+        hourly_result = await db.execute(text("""
+            SELECT EXTRACT(HOUR FROM timestamp)::int AS hour, COUNT(*)::int AS cnt
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND sensor = :sensor
+            GROUP BY hour
+            ORDER BY hour
+        """), params)
+        hourly_slots = [0] * 24
+        for row in hourly_result.fetchall():
+            hourly_slots[int(row.hour)] = int(row.cnt or 0)
+
+        severity_result = await db.execute(text("""
+            SELECT COALESCE(severity, 'low') AS severity, COUNT(*)::int AS cnt
+            FROM events
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+              AND sensor = :sensor
+            GROUP BY severity
+        """), params)
+        severity_counts = {"high": 0, "medium": 0, "low": 0}
+        for row in severity_result.fetchall():
+            if row.severity in severity_counts:
+                severity_counts[row.severity] = int(row.cnt or 0)
+
         return {
             "sensor": target_sensor,
             "stats": {
@@ -1199,6 +1322,11 @@ async def get_remote_deep(
             "ports": {
                 "labels": [str(r.port) for r in port_rows],
                 "data": [int(r.cnt or 0) for r in port_rows],
+            },
+            "hourly": {"labels": [f"{h:02d}:00" for h in range(24)], "data": hourly_slots},
+            "severity": {
+                "labels": ["High", "Medium", "Low"],
+                "data": [severity_counts["high"], severity_counts["medium"], severity_counts["low"]],
             },
             "top_sources": [
                 {
@@ -1221,6 +1349,8 @@ async def get_remote_deep(
             "stats": {"events_24h": 0, "unique_ips": 0, "high_severity": 0, "sessions": 0, "last_seen": None},
             "event_types": {"labels": [], "data": []},
             "ports": {"labels": [], "data": []},
+            "hourly": {"labels": [], "data": []},
+            "severity": {"labels": ["High", "Medium", "Low"], "data": [0, 0, 0]},
             "top_sources": [],
             "credentials": [],
         }

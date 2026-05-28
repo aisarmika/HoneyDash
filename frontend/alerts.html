@@ -42,6 +42,43 @@
     }
     .investigation-actions .btn { margin: 1px; }
     .note-chip { display:block; max-width:220px; color:#adb5bd; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .alert-drawer-backdrop {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.42);
+      z-index:2039;
+    }
+    .alert-drawer-backdrop.open { display:block; }
+    .alert-drawer {
+      position:fixed; top:0; right:-760px; width:min(760px, 100vw); height:100vh;
+      z-index:2040; background:#0d1117; color:#c9d1d9;
+      border-left:1px solid rgba(139,148,158,.25);
+      box-shadow:-18px 0 45px rgba(0,0,0,.55);
+      transition:right .22s ease; display:flex; flex-direction:column;
+    }
+    .alert-drawer.open { right:0; }
+    .alert-drawer-header {
+      padding:14px 18px; border-bottom:1px solid #21262d;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background:#161b22;
+    }
+    .alert-drawer-title { font-weight:800; letter-spacing:.08em; text-transform:uppercase; font-size:12px; }
+    .alert-drawer-subtitle { color:#8b949e; font-size:12px; margin-top:2px; }
+    .alert-drawer-body { overflow:auto; padding:14px 18px 22px; }
+    .drawer-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+    .drawer-kpi { border:1px solid #30363d; background:#161b22; border-radius:6px; padding:9px; min-height:68px; }
+    .drawer-kpi span { display:block; color:#8b949e; font-size:10px; text-transform:uppercase; letter-spacing:.07em; }
+    .drawer-kpi strong { display:block; color:#f0f6fc; font-size:14px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .timeline-list { position:relative; margin:0; padding:0 0 0 18px; list-style:none; }
+    .timeline-list:before { content:''; position:absolute; left:5px; top:5px; bottom:5px; width:1px; background:#30363d; }
+    .timeline-list li { position:relative; padding:0 0 12px 14px; }
+    .timeline-list li:before { content:''; position:absolute; left:-17px; top:4px; width:9px; height:9px; border-radius:50%; background:#58a6ff; box-shadow:0 0 0 3px rgba(88,166,255,.13); }
+    .timeline-time { color:#8b949e; font-size:10.5px; }
+    .timeline-main { color:#c9d1d9; font-size:12.5px; }
+    .timeline-meta { color:#6e7681; font-size:11px; margin-top:2px; }
+    .response-list { margin:0; padding-left:18px; }
+    .response-list li { margin-bottom:6px; font-size:12.5px; }
+    @media (max-width: 767px) {
+      .drawer-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
+    }
   </style>
 </head>
 
@@ -336,6 +373,20 @@
       </div>
     </div>
 
+    <div class="alert-drawer-backdrop" id="alertDrawerBackdrop" onclick="closeAlertDrawer()"></div>
+    <aside class="alert-drawer" id="alertDrawer" aria-hidden="true">
+      <div class="alert-drawer-header">
+        <div>
+          <div class="alert-drawer-title"><i class="fas fa-stream text-info mr-2"></i>Alert Investigation Timeline</div>
+          <div class="alert-drawer-subtitle" id="drawerSubtitle">Loading alert context...</div>
+        </div>
+        <button class="btn btn-sm btn-outline-light" onclick="closeAlertDrawer()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="alert-drawer-body" id="alertDrawerBody">
+        <div class="text-center py-5 text-muted"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+      </div>
+    </aside>
+
     <footer class="main-footer">
       <strong>HoneyDash SOC Platform</strong> <span style="color:#6e7681">— Cowrie · Dionaea · Remote Sensors · ML Anomaly Detection</span>
     </footer>
@@ -345,6 +396,7 @@
   <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="dist/js/adminlte.min.js"></script>
   <script src="config.js"></script>
+  <script src="sidebar.js"></script>
 
   <script>
     const API_BASE = window._HD_API;
@@ -558,14 +610,119 @@
       return html;
     }
 
+    function closeAlertDrawer() {
+      $('#alertDrawer, #alertDrawerBackdrop').removeClass('open');
+      $('#alertDrawer').attr('aria-hidden', 'true');
+    }
+
+    function timelineText(ev) {
+      if (ev.command_input) return `Command executed: ${escapeHtml(ev.command_input)}`;
+      if (ev.username) return `Credential attempt: <code>${escapeHtml(ev.username)}</code> / <code>${escapeHtml(ev.password || '')}</code>`;
+      if (ev.download_url) return `File download: <code>${escapeHtml(ev.download_url)}</code>`;
+      return escapeHtml(ev.attack_type || ev.event_id || 'Honeypot event');
+    }
+
+    function buildRecommendedResponse(ev, rem) {
+      const items = [];
+      if (ev.src_ip) items.push(`Tag source IP <code>${escapeHtml(ev.src_ip)}</code> as suspicious and watch repeat activity.`);
+      if (ev.username) items.push('Review attempted credentials for weak-password patterns and reuse risk.');
+      if (ev.command_input) items.push('Review command sequence and map behavior to MITRE technique notes.');
+      if (ev.download_url) items.push('Treat downloaded file as malware until proven otherwise; preserve hash and URL evidence.');
+      if (ev.sensor === 'remote') items.push('Confirm friend remote sensor timestamp and ingest key are healthy.');
+      (rem.immediate || []).slice(0, 4).forEach(step => items.push(escapeHtml(step)));
+      return items.length ? items : ['Review the related session, confirm source reputation, and document the analyst decision.'];
+    }
+
+    function renderTimelineDrawer(ev, sessionData, rem) {
+      const sess = sessionData && sessionData.session ? sessionData.session : {};
+      const events = sessionData && sessionData.events && sessionData.events.length ? sessionData.events : [ev];
+      const commands = events.filter(e => e.command_input).length || sess.commands_run || 0;
+      const downloads = events.filter(e => e.download_url).length || sess.files_downloaded || 0;
+      const credentials = events.filter(e => e.username).length || sess.login_attempts || 0;
+      const location = [ev.city, ev.country].filter(Boolean).join(', ') || ev.country || 'Unknown';
+      const response = buildRecommendedResponse(ev, rem);
+
+      $('#drawerSubtitle').html(`${escapeHtml(ev.attack_type || ev.event_id || 'Alert')} from <code>${escapeHtml(ev.src_ip || '-')}</code>`);
+
+      const timeline = events.slice(-20).map(item => `
+        <li>
+          <div class="timeline-time">${item.timestamp ? new Date(item.timestamp).toLocaleString() : '-'}</div>
+          <div class="timeline-main">${timelineText(item)}</div>
+          <div class="timeline-meta">
+            ${escapeHtml(item.event_id || item.attack_type || '-')}
+            ${item.severity ? ` · <span class="badge badge-${item.severity}">${escapeHtml(item.severity)}</span>` : ''}
+          </div>
+        </li>
+      `).join('');
+
+      return `
+        <div class="drawer-grid">
+          <div class="drawer-kpi"><span>Source IP</span><strong>${escapeHtml(ev.src_ip || '-')}</strong></div>
+          <div class="drawer-kpi"><span>Location</span><strong title="${escapeAttr(location)}">${escapeHtml(location)}</strong></div>
+          <div class="drawer-kpi"><span>Sensor</span><strong>${escapeHtml(ev.sensor || '-')}</strong></div>
+          <div class="drawer-kpi"><span>Severity</span><strong><span class="badge badge-${ev.severity || 'secondary'}">${escapeHtml(ev.severity || '-')}</span></strong></div>
+          <div class="drawer-kpi"><span>Session</span><strong title="${escapeAttr(ev.session_id || '')}">${escapeHtml((ev.session_id || '-').substring(0, 18))}</strong></div>
+          <div class="drawer-kpi"><span>Credentials</span><strong>${Number(credentials || 0).toLocaleString()}</strong></div>
+          <div class="drawer-kpi"><span>Commands</span><strong>${Number(commands || 0).toLocaleString()}</strong></div>
+          <div class="drawer-kpi"><span>Downloads</span><strong>${Number(downloads || 0).toLocaleString()}</strong></div>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-7">
+            <div class="card card-outline card-info">
+              <div class="card-header"><h3 class="card-title"><i class="fas fa-stream mr-1"></i>Event Timeline</h3></div>
+              <div class="card-body">
+                <ul class="timeline-list">${timeline}</ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="card card-outline card-danger">
+              <div class="card-header"><h3 class="card-title"><i class="fas fa-shield-alt mr-1"></i>Recommended Response</h3></div>
+              <div class="card-body">
+                <ul class="response-list">${response.map(step => `<li>${step}</li>`).join('')}</ul>
+              </div>
+            </div>
+            <div class="card card-outline card-secondary">
+              <div class="card-header"><h3 class="card-title"><i class="fas fa-fingerprint mr-1"></i>Evidence</h3></div>
+              <div class="card-body" style="font-size:12px">
+                <div><strong>Protocol:</strong> ${escapeHtml(ev.protocol || '-')}</div>
+                <div><strong>Destination Port:</strong> ${escapeHtml(ev.dst_port || '-')}</div>
+                <div><strong>ISP:</strong> ${escapeHtml(ev.isp || '-')}</div>
+                ${ev.username ? `<div><strong>Username:</strong> <code>${escapeHtml(ev.username)}</code></div>` : ''}
+                ${ev.password ? `<div><strong>Password:</strong> <code>${escapeHtml(ev.password)}</code></div>` : ''}
+                ${ev.download_url ? `<div><strong>Download URL:</strong> <code>${escapeHtml(ev.download_url)}</code></div>` : ''}
+              </div>
+            </div>
+            <div class="text-right">
+              <button class="btn btn-sm btn-success" onclick="setAlertAction(${ev.id}, 'reviewed')"><i class="fas fa-check mr-1"></i>Mark Reviewed</button>
+              <button class="btn btn-sm btn-warning" onclick="setAlertAction(${ev.id}, 'escalated')"><i class="fas fa-arrow-up mr-1"></i>Escalate</button>
+              <button class="btn btn-sm btn-primary" onclick="openNote(${ev.id})"><i class="fas fa-sticky-note mr-1"></i>Add Note</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
     async function viewDetails(id) {
+      $('#alertDrawerBody').html('<div class="text-center py-5 text-muted"><i class="fas fa-spinner fa-spin"></i> Loading alert timeline...</div>');
+      $('#alertDrawer, #alertDrawerBackdrop').addClass('open');
+      $('#alertDrawer').attr('aria-hidden', 'false');
       $('#sessionDetails').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i></div>');
       $('#remediationContent').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
       // Reset to Details tab
       $('#alertModalTabs a[href="#tabAlertDetails"]').tab('show');
-      $('#sessionModal').modal('show');
       try {
         const ev = await apiFetch('/api/events/' + id);
+        let sessionData = null;
+        try {
+          if (ev.session_id) sessionData = await apiFetch('/api/sessions/' + encodeURIComponent(ev.session_id));
+        } catch(e) {}
+        let rem = { immediate: [] };
+        try {
+          rem = await apiFetch('/api/remediation?attack_type=' + encodeURIComponent(ev.attack_type || ''));
+        } catch(e) {}
+        $('#alertDrawerBody').html(renderTimelineDrawer(ev, sessionData, rem));
+
         const loc = [ev.city, ev.country].filter(Boolean).join(', ') || 'Unknown';
         const vtScore = ev.vt_malicious != null
           ? `<span class="badge badge-${ev.vt_malicious >= 3 ? 'danger' : 'warning'}">${ev.vt_malicious}/${ev.vt_total||'?'} malicious</span>`
@@ -600,10 +757,7 @@
         </div>`;
         $('#sessionDetails').html(html);
 
-        // Also load dynamic remediation steps (keyed by attack_type from the event)
         try {
-          const attackType = ev.attack_type || '';
-          const rem = await apiFetch('/api/remediation?attack_type=' + encodeURIComponent(attackType));
           // Inject any context we have from the event
           rem.context_alerts = rem.context_alerts || [];
           if (ev.severity === 'high' && !rem.context_alerts.length) {
@@ -616,6 +770,7 @@
         }
       } catch(e) {
         $('#sessionDetails').html('<div class="alert alert-danger">Failed to load event details.</div>');
+        $('#alertDrawerBody').html('<div class="alert alert-danger">Failed to load alert timeline.</div>');
       }
     }
 

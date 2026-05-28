@@ -681,6 +681,20 @@
                       <div class="mt-2"><span class="badge badge-info" id="cowrieSessBadge">— sessions</span></div>
                     </div>
                   </div>
+                  <div class="row mt-3">
+                    <div class="col-md-4">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-user-lock mr-1"></i>Auth Outcome Mix</h6>
+                      <canvas id="cowrieAuthChart" style="height:190px;max-height:190px;max-width:100%"></canvas>
+                    </div>
+                    <div class="col-md-4">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-skull-crossbones mr-1"></i>Brute Force Intensity</h6>
+                      <canvas id="cowrieIntensityChart" style="height:190px;max-height:190px;max-width:100%"></canvas>
+                    </div>
+                    <div class="col-md-4">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-clock mr-1"></i>SSH Activity by Hour</h6>
+                      <canvas id="cowrieHourlyChart" style="height:190px;max-height:190px;max-width:100%"></canvas>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -707,6 +721,16 @@
                     <div class="col-md-4">
                       <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-user mr-1"></i>Top Targeted Usernames</h6>
                       <canvas id="usernameBarChart" style="height:220px;max-height:220px;max-width:100%"></canvas>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-radar mr-1"></i>Exploit Events by Hour</h6>
+                      <canvas id="dioHourlyChart" style="height:200px;max-height:200px;max-width:100%"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-door-open mr-1"></i>Target Port Mix</h6>
+                      <canvas id="dioPortChart" style="height:200px;max-height:200px;max-width:100%"></canvas>
                     </div>
                   </div>
                   <div class="row">
@@ -783,6 +807,16 @@
                     <div class="col-md-4">
                       <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-file-code mr-1"></i>File Types</h6>
                       <canvas id="malwareTypeChart" style="height:200px;max-height:200px;max-width:100%"></canvas>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-clock mr-1"></i>Remote Events by Hour</h6>
+                      <canvas id="remoteHourlyChart" style="height:200px;max-height:200px;max-width:100%"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-signal mr-1"></i>Remote Severity Mix</h6>
+                      <canvas id="remoteSeverityChart" style="height:200px;max-height:200px;max-width:100%"></canvas>
                     </div>
                   </div>
                   <div class="row">
@@ -1068,6 +1102,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <script src="config.js"></script>
+  <script src="sidebar.js"></script>
 
   <script>
   // ═══════════════════════ CONFIG & AUTH ═══════════════════════════════════
@@ -1153,6 +1188,9 @@
 
   function setSensorFilter(sensor) {
     _activeSensor = sensor;
+    attackTimestamps.length = 0;
+    activeArcs = [];
+    lastEventTime = null;
     document.querySelectorAll('.sensor-btn').forEach(b => b.classList.remove('active','active-cowrie','active-dionaea','active-remote'));
     const map = {
       '':           ['sensorBtnAll',     'active'],
@@ -1185,6 +1223,7 @@
     loadHourlyData(); loadTopPorts(); loadTopAttackers(); loadTopCredentials();
     loadMalwareFeed(); loadUniqueAttackers(); loadLoginBreakdown();
     loadCowrieDeep(); loadDionaeaDeep(); loadRemoteDeep(); loadGeographicIntel(); loadCredentialAnalysis(); loadNetworkIntel();
+    loadMapData(); loadHeatmap(); loadMlStats(); loadRecentEvents(); loadHighSeverityNotifs();
   }
 
   // ═══════════════════════ TOAST ═══════════════════════════════════════════
@@ -1258,7 +1297,13 @@
       const msg = JSON.parse(e.data);
       if (msg.type === 'new_event')         handleNewEvent(msg.data);
       if (msg.type === 'enrichment_update') handleEnrichmentUpdate(msg.data);
-      if (msg.type === 'stats_update')      updateStatsBoxes(msg.data);
+      if (msg.type === 'stats_update') {
+        if (_activeSensor) {
+          apiFetch(sensorParamFor('/api/dashboard/stats')).then(updateStatsBoxes).catch(()=>{});
+        } else {
+          updateStatsBoxes(msg.data);
+        }
+      }
       if (msg.type === 'new_malware')       handleNewMalware(msg.data);
     };
     ws.onclose = () => {
@@ -1296,6 +1341,7 @@
 
   // ═══════════════════════ NEW EVENT (WS) ══════════════════════════════════
   function handleNewEvent(ev) {
+    if (_activeSensor && ev.sensor !== _activeSensor) return;
     lastEventTime = new Date();
     attackTimestamps.push(Date.now());
     const ph = document.getElementById('noDataRow');
@@ -1394,7 +1440,7 @@
     }).join(''));
   }
   async function loadHighSeverityNotifs() {
-    try { const d = await apiFetch('/api/events?limit=20&offset=0&severity=high'); notifQueue = d.items||[]; refreshNotifDropdown(); } catch(e) {}
+    try { const d = await apiFetch(sensorParamFor('/api/events?limit=20&offset=0&severity=high')); notifQueue = d.items||[]; refreshNotifDropdown(); } catch(e) {}
   }
 
   // ═══════════════════════ MAP ══════════════════════════════════════════════
@@ -1519,7 +1565,7 @@
 
   async function loadMapData() {
     try {
-      const d = await apiFetch('/api/dashboard/map');
+      const d = await apiFetch(sensorParamFor('/api/dashboard/map'));
       Object.values(mapMarkersByCountry).forEach(m => m.remove()); mapMarkersByCountry = {};
       d.markers.forEach(loc => {
         const c = L.circleMarker([loc.lat, loc.lng], { radius:Math.max(5, Math.sqrt(loc.count)*2), color:'#dc3545', fillColor:'#f03', fillOpacity:0.55, weight:1.5 }).addTo(map);
@@ -1720,7 +1766,7 @@
     const cont = document.getElementById('heatmapContainer');
     cont.innerHTML = '<p class="text-muted text-center py-3"><i class="fas fa-spinner fa-spin"></i> Loading…</p>';
     try {
-      const d = await apiFetch('/api/dashboard/heatmap?days=' + days);
+      const d = await apiFetch(sensorParamFor('/api/dashboard/heatmap?days=' + days));
       if (!d.countries.length) { cont.innerHTML='<p class="text-muted text-center py-3">No geo-enriched data yet. Enrichment runs in the background.</p>'; return; }
       let maxV = 1;
       d.countries.forEach(c => (d.matrix[c]||[]).forEach(v => { if(v>maxV) maxV=v; }));
@@ -1745,7 +1791,7 @@
 
   // ═══════════════════════ RECENT EVENTS (initial) ═════════════════════════
   // ═══════════════════════ COWRIE DEEP ═════════════════════════════════════
-  let cowrieDurChart = null;
+  let cowrieDurChart = null, cowrieAuthChart = null, cowrieIntensityChart = null, cowrieHourlyChart = null;
   async function loadCowrieDeep() {
     try {
       const d = await apiFetch(sensorParamFor('/api/dashboard/cowrie-deep'));
@@ -1795,11 +1841,58 @@
           cowrieDurChart.update();
         }
       }
+
+      const authCtx = document.getElementById('cowrieAuthChart');
+      if (authCtx) {
+        const authData = [login.failures || Math.max((login.attempts || 0) - (login.successes || 0), 0), login.successes || 0];
+        if (!cowrieAuthChart) {
+          cowrieAuthChart = new Chart(authCtx, {
+            type: 'doughnut',
+            data: { labels:['Failed', 'Successful'], datasets:[{ data: authData, backgroundColor:['#dc3545','#28a745'], borderWidth:0 }] },
+            options: { cutout:'65%', plugins:{legend:{position:'bottom',labels:{color:'#adb5bd',font:{size:10}}}}, animation:{duration:600} }
+          });
+        } else {
+          cowrieAuthChart.data.datasets[0].data = authData;
+          cowrieAuthChart.update();
+        }
+      }
+
+      const intensityCtx = document.getElementById('cowrieIntensityChart');
+      const intensity = d.intensity || { labels: [], data: [] };
+      if (intensityCtx) {
+        if (!cowrieIntensityChart) {
+          cowrieIntensityChart = new Chart(intensityCtx, {
+            type: 'bar',
+            data: { labels:intensity.labels, datasets:[{ label:'Sessions', data:intensity.data, backgroundColor:['#17a2b8','#ffc107','#fd7e14','#dc3545'], borderRadius:3 }] },
+            options: { plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#adb5bd',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}, animation:{duration:600} }
+          });
+        } else {
+          cowrieIntensityChart.data.labels = intensity.labels;
+          cowrieIntensityChart.data.datasets[0].data = intensity.data;
+          cowrieIntensityChart.update();
+        }
+      }
+
+      const hourlyCtx = document.getElementById('cowrieHourlyChart');
+      const hourly = d.hourly || { labels: [], data: [] };
+      if (hourlyCtx) {
+        if (!cowrieHourlyChart) {
+          cowrieHourlyChart = new Chart(hourlyCtx, {
+            type: 'line',
+            data: { labels:hourly.labels, datasets:[{ label:'Events', data:hourly.data, borderColor:'#17a2b8', backgroundColor:'rgba(23,162,184,0.12)', fill:true, tension:.35, pointRadius:0 }] },
+            options: { plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#6c757d',font:{size:9},maxRotation:0},grid:{display:false}},y:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}, animation:{duration:600} }
+          });
+        } else {
+          cowrieHourlyChart.data.labels = hourly.labels;
+          cowrieHourlyChart.data.datasets[0].data = hourly.data;
+          cowrieHourlyChart.update();
+        }
+      }
     } catch(e) {}
   }
 
   // ═══════════════════════ DIONAEA DEEP ════════════════════════════════════
-  let dioTimelineChart = null, dioVtBucketsChart = null, dioFamilyChart = null, dionaeaServiceChart = null, malwareTypeChart = null;
+  let dioTimelineChart = null, dioVtBucketsChart = null, dioFamilyChart = null, dionaeaServiceChart = null, malwareTypeChart = null, dioHourlyChart = null, dioPortChart = null;
   async function loadDionaeaDeep() {
     try {
       const d = await apiFetch(sensorParamFor('/api/dashboard/dionaea-deep'));
@@ -1926,11 +2019,43 @@
             </tr>`).join('');
         }
       }
+
+      const dioHourlyCtx = document.getElementById('dioHourlyChart');
+      const dioHourly = d.hourly || { labels: [], data: [] };
+      if (dioHourlyCtx) {
+        if (!dioHourlyChart) {
+          dioHourlyChart = new Chart(dioHourlyCtx, {
+            type: 'line',
+            data: { labels: dioHourly.labels, datasets: [{ label:'Events', data: dioHourly.data, borderColor:'#dc3545', backgroundColor:'rgba(220,53,69,0.12)', fill:true, tension:.35, pointRadius:0 }] },
+            options: { plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#6c757d',font:{size:9},maxRotation:0},grid:{display:false}},y:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}, animation:{duration:600} }
+          });
+        } else {
+          dioHourlyChart.data.labels = dioHourly.labels;
+          dioHourlyChart.data.datasets[0].data = dioHourly.data;
+          dioHourlyChart.update();
+        }
+      }
+
+      const dioPortCtx = document.getElementById('dioPortChart');
+      const dioPorts = d.ports || { labels: [], data: [] };
+      if (dioPortCtx) {
+        if (!dioPortChart) {
+          dioPortChart = new Chart(dioPortCtx, {
+            type: 'bar',
+            data: { labels: dioPorts.labels, datasets: [{ label:'Hits', data: dioPorts.data, backgroundColor:'#20c997', borderRadius:3 }] },
+            options: { plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#adb5bd',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}, animation:{duration:600} }
+          });
+        } else {
+          dioPortChart.data.labels = dioPorts.labels;
+          dioPortChart.data.datasets[0].data = dioPorts.data;
+          dioPortChart.update();
+        }
+      }
     } catch(e) {}
   }
 
   // ═══════════════════════ REMOTE SENSOR DEEP ══════════════════════════════
-  let remoteEventTypeChart = null, remotePortChart = null;
+  let remoteEventTypeChart = null, remotePortChart = null, remoteHourlyChart = null, remoteSeverityChart = null;
   async function loadRemoteDeep() {
     try {
       const path = _activeSensor ? sensorParamFor('/api/dashboard/remote-deep') : '/api/dashboard/remote-deep';
@@ -1972,6 +2097,38 @@
           remotePortChart.data.labels = ports.labels;
           remotePortChart.data.datasets[0].data = ports.data;
           remotePortChart.update();
+        }
+      }
+
+      const remoteHourlyCtx = document.getElementById('remoteHourlyChart');
+      const remoteHourly = d.hourly || { labels: [], data: [] };
+      if (remoteHourlyCtx) {
+        if (!remoteHourlyChart) {
+          remoteHourlyChart = new Chart(remoteHourlyCtx, {
+            type: 'line',
+            data: { labels: remoteHourly.labels, datasets: [{ label:'Events', data: remoteHourly.data, borderColor:'#8957e5', backgroundColor:'rgba(137,87,229,0.14)', fill:true, tension:.35, pointRadius:0 }] },
+            options: { plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#6c757d',font:{size:9},maxRotation:0},grid:{display:false}},y:{ticks:{color:'#6c757d',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}, animation:{duration:600} }
+          });
+        } else {
+          remoteHourlyChart.data.labels = remoteHourly.labels;
+          remoteHourlyChart.data.datasets[0].data = remoteHourly.data;
+          remoteHourlyChart.update();
+        }
+      }
+
+      const remoteSeverityCtx = document.getElementById('remoteSeverityChart');
+      const remoteSeverity = d.severity || { labels: ['High', 'Medium', 'Low'], data: [0, 0, 0] };
+      if (remoteSeverityCtx) {
+        if (!remoteSeverityChart) {
+          remoteSeverityChart = new Chart(remoteSeverityCtx, {
+            type: 'doughnut',
+            data: { labels: remoteSeverity.labels, datasets: [{ data: remoteSeverity.data, backgroundColor:['#dc3545','#ffc107','#17a2b8'], borderWidth:0 }] },
+            options: { cutout:'65%', plugins:{legend:{position:'bottom',labels:{color:'#adb5bd',font:{size:10}}}}, animation:{duration:600} }
+          });
+        } else {
+          remoteSeverityChart.data.labels = remoteSeverity.labels;
+          remoteSeverityChart.data.datasets[0].data = remoteSeverity.data;
+          remoteSeverityChart.update();
         }
       }
 
@@ -2183,7 +2340,7 @@
   let mlDonutChart = null;
   async function loadMlStats() {
     try {
-      const d = await apiFetch('/api/dashboard/ml-stats');
+      const d = await apiFetch(sensorParamFor('/api/dashboard/ml-stats'));
       // Update stat box in second row
       const countBox = document.getElementById('mlAnomalyCount');
       if (countBox) animateCounter('mlAnomalyCount', d.anomaly_count || 0);
@@ -2242,10 +2399,12 @@
 
   async function loadRecentEvents() {
     try {
-      const d = await apiFetch('/api/events?limit=25&offset=0');
+      const d = await apiFetch(sensorParamFor('/api/events?limit=25&offset=0'));
+      const tbody = document.getElementById('attacksTableBody');
+      tbody.innerHTML = '';
+      feedRowCount = 0;
       if (d.items && d.items.length) {
-        const tbody = document.getElementById('attacksTableBody');
-        tbody.innerHTML = '';
+        lastEventTime = d.items[0].timestamp ? new Date(d.items[0].timestamp) : null;
         d.items.forEach(ev => {
           const row = document.createElement('tr');
           row.dataset.ip = ev.src_ip;
@@ -2253,8 +2412,10 @@
           tbody.appendChild(row);
           feedRowCount++;
         });
-        document.getElementById('feedCount').textContent = feedRowCount + ' events';
+      } else {
+        tbody.innerHTML = '<tr id="noDataRow"><td colspan="10" class="text-center text-muted py-4">No events for this sensor yet</td></tr>';
       }
+      document.getElementById('feedCount').textContent = feedRowCount + ' events';
     } catch(e) {}
   }
 

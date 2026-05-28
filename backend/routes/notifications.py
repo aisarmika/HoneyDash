@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth import get_current_user
 from ..database import get_db
 from ..models import NotificationConfig
-from ..services.notifier import send_webhook
+from ..services.notifier import send_email, send_telegram, send_webhook
 
 router = APIRouter()
 
@@ -80,7 +80,8 @@ async def save_config(
     cfg.email_host = payload.email_host
     cfg.email_port = payload.email_port
     cfg.email_user = payload.email_user
-    cfg.email_pass = payload.email_pass
+    if payload.email_pass is not None:
+        cfg.email_pass = payload.email_pass
     cfg.email_enabled = payload.email_enabled
     cfg.min_severity = payload.min_severity
     cfg.tg_bot_token = payload.tg_bot_token
@@ -102,7 +103,7 @@ async def test_webhook(
     ok, msg = await send_webhook(cfg.webhook_url, {
         "source": "HoneyDash",
         "type": "test",
-        "message": "HoneyDash webhook test — connection successful",
+        "message": "HoneyDash webhook test - connection successful",
     })
     return {"success": ok, "message": msg}
 
@@ -112,13 +113,29 @@ async def test_telegram(
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ):
-    from ..services.notifier import send_telegram
     result = await db.execute(select(NotificationConfig).where(NotificationConfig.id == 1))
     cfg = result.scalar_one_or_none()
     if not cfg or not cfg.tg_bot_token or not cfg.tg_chat_id:
         raise HTTPException(status_code=400, detail="Telegram not configured")
     ok, msg = await send_telegram(
         cfg.tg_bot_token, cfg.tg_chat_id,
-        "✅ <b>HoneyDash</b> — Telegram test successful!\nYour alerts are connected."
+        "<b>HoneyDash</b> - Telegram test successful!\nYour alerts are connected."
+    )
+    return {"success": ok, "message": msg}
+
+
+@router.post("/test-email")
+async def test_email(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    result = await db.execute(select(NotificationConfig).where(NotificationConfig.id == 1))
+    cfg = result.scalar_one_or_none()
+    if not cfg or not cfg.email_to or not cfg.email_host:
+        raise HTTPException(status_code=400, detail="Email recipient or SMTP host not configured")
+    ok, msg = await send_email(
+        cfg,
+        "HoneyDash email test",
+        "HoneyDash email notification test successful.\nYour SMTP alert channel is connected.",
     )
     return {"success": ok, "message": msg}

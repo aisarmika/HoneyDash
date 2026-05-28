@@ -14,10 +14,11 @@ async def websocket_endpoint(
     websocket: WebSocket,
     token: str = Query(...),
 ):
-    # Validate JWT before accepting
+    # Validate JWT — must accept before we can send a close frame
     try:
         decode_token(token)
     except Exception:
+        await websocket.accept()
         await websocket.close(code=1008)
         return
 

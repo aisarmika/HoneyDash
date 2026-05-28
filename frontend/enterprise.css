@@ -57,7 +57,21 @@ html                            { background: var(--hd-bg) !important; }
 /* ── Sidebar ────────────────────────────────────────────────────────── */
 .main-sidebar,
 .main-sidebar .sidebar             { background: var(--hd-surface) !important; }
-.main-sidebar                      { border-right: 1px solid var(--hd-border) !important; }
+.main-sidebar {
+  border-right: 1px solid var(--hd-border) !important;
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+.main-sidebar .sidebar {
+  height: calc(100vh - 57px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+.main-sidebar .sidebar::-webkit-scrollbar { width: 6px; }
+.main-sidebar .sidebar::-webkit-scrollbar-thumb { background: var(--hd-border2); border-radius: 8px; }
 .brand-link {
   background: var(--hd-surface) !important;
   border-bottom: 1px solid var(--hd-border) !important;
@@ -79,6 +93,115 @@ html                            { background: var(--hd-bg) !important; }
 .user-panel                        { border-bottom: 1px solid var(--hd-border) !important; }
 .user-panel .info a                { color: var(--hd-text2) !important; font-size: 13px !important; }
 .user-panel .image img             { border: 2px solid var(--hd-border2) !important; }
+
+.hd-nav-section {
+  color: var(--hd-text3) !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: .11em !important;
+  padding: 12px 12px 5px !important;
+}
+
+.hd-soc-sidebar {
+  margin: 12px 8px 16px;
+  padding: 10px;
+  border: 1px solid rgba(88,166,255,.18);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(28,35,51,.92), rgba(13,17,23,.74));
+}
+.hd-soc-title,
+.hd-soc-row,
+.hd-soc-remote-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hd-soc-title {
+  color: var(--hd-text);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hd-border);
+}
+.hd-soc-title i { color: var(--hd-blue3); margin-right: 5px; }
+.hd-soc-live {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(63,185,80,.14);
+  color: var(--hd-green3);
+  font-size: 9px;
+  font-weight: 800;
+}
+.hd-soc-row {
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(139,148,158,.12);
+  font-size: 11.5px;
+  color: var(--hd-text2);
+}
+.hd-soc-row strong {
+  color: var(--hd-text);
+  font-variant-numeric: tabular-nums;
+}
+.hd-soc-state {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.hd-soc-state-ok { background: var(--hd-green3); box-shadow: 0 0 8px rgba(63,185,80,.65); }
+.hd-soc-state-warn { background: var(--hd-amber2); }
+.hd-soc-state-bad { background: var(--hd-red3); box-shadow: 0 0 8px rgba(248,81,73,.55); }
+.hd-soc-remote {
+  margin-top: 9px;
+  padding: 8px;
+  border: 1px solid rgba(137,87,229,.24);
+  border-radius: 5px;
+  background: rgba(137,87,229,.07);
+}
+.hd-soc-remote-head {
+  color: var(--hd-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+.hd-soc-remote-head i { color: var(--hd-purple3); margin-right: 4px; }
+.hd-soc-chip {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.hd-soc-chip-ok { background: rgba(63,185,80,.14); color: var(--hd-green3); }
+.hd-soc-chip-warn { background: rgba(210,153,34,.14); color: var(--hd-amber2); }
+.hd-soc-chip-muted { background: rgba(139,148,158,.12); color: var(--hd-text3); }
+.hd-soc-muted {
+  margin-top: 5px;
+  color: var(--hd-text3);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+.hd-soc-muted code {
+  display: block;
+  margin-top: 2px;
+  color: var(--hd-blue3);
+  background: rgba(13,17,23,.45);
+  border: 1px solid rgba(139,148,158,.14);
+  border-radius: 3px;
+  padding: 3px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hd-soc-footer {
+  margin-top: 8px;
+  color: var(--hd-text3);
+  font-size: 10px;
+}
 
 /* ── Cards ──────────────────────────────────────────────────────────── */
 .card {

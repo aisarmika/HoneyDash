@@ -247,10 +247,18 @@
               <p class="text-muted small mb-2" style="text-transform:uppercase;letter-spacing:.05em;font-size:10px">Email (SMTP)</p>
               <div class="row">
                 <div class="col-md-4"><div class="form-group"><label>Send Alerts To</label><input type="email" id="notifEmailTo" class="form-control" placeholder="security@example.com"></div></div>
-                <div class="col-md-4"><div class="form-group"><label>SMTP Host</label><input type="text" id="notifEmailHost" class="form-control" placeholder="smtp.example.com"></div></div>
+                <div class="col-md-4"><div class="form-group"><label>SMTP Host</label><input type="text" id="notifEmailHost" class="form-control" placeholder="smtp.gmail.com"></div></div>
                 <div class="col-md-2"><div class="form-group"><label>Port</label><input type="number" id="notifEmailPort" class="form-control" value="587"></div></div>
                 <div class="col-md-2 d-flex align-items-center pt-3">
                   <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="notifEmailEnabled"><label class="custom-control-label" for="notifEmailEnabled">Enable</label></div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4"><div class="form-group"><label>SMTP Username</label><input type="text" id="notifEmailUser" class="form-control" placeholder="sender@example.com"></div></div>
+                <div class="col-md-4"><div class="form-group"><label>SMTP Password / App Password</label><input type="password" id="notifEmailPass" class="form-control" placeholder="Leave blank to keep saved password"></div></div>
+                <div class="col-md-4 d-flex align-items-center pt-3">
+                  <button class="btn btn-sm btn-outline-info" onclick="testEmail()" id="testEmailBtn"><i class="fas fa-envelope mr-1"></i>Test Email</button>
+                  <span id="emailTestResult" style="display:none;margin-left:8px;font-size:12px"></span>
                 </div>
               </div>
               <div class="cfg-divider"></div>
@@ -335,6 +343,7 @@
 <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="dist/js/adminlte.min.js"></script>
 <script src="config.js"></script>
+<script src="sidebar.js"></script>
 <script>
 const API = window._HD_API;
 
@@ -707,6 +716,7 @@ async function loadNotifications() {
         document.getElementById('notifEmailTo').value        = d.email_to       || '';
         document.getElementById('notifEmailHost').value      = d.email_host     || '';
         document.getElementById('notifEmailPort').value      = d.email_port     || 587;
+        document.getElementById('notifEmailUser').value      = d.email_user     || '';
         document.getElementById('notifEmailEnabled').checked = d.email_enabled  || false;
         document.getElementById('notifMinSev').value         = d.min_severity   || 'high';
         document.getElementById('tgEnabled').checked         = d.tg_enabled     || false;
@@ -715,34 +725,60 @@ async function loadNotifications() {
     } catch(e) { console.warn('notifications load failed', e); }
 }
 
-async function saveNotifications() {
-    const payload = {
+function collectNotificationPayload() {
+    return {
         webhook_url:     document.getElementById('notifWebhookUrl').value.trim() || null,
         webhook_enabled: document.getElementById('notifWebhookEnabled').checked,
         email_to:        document.getElementById('notifEmailTo').value.trim()    || null,
         email_host:      document.getElementById('notifEmailHost').value.trim()  || null,
         email_port:      parseInt(document.getElementById('notifEmailPort').value) || 587,
+        email_user:      document.getElementById('notifEmailUser').value.trim()  || null,
+        email_pass:      document.getElementById('notifEmailPass').value.trim()  || null,
         email_enabled:   document.getElementById('notifEmailEnabled').checked,
         min_severity:    document.getElementById('notifMinSev').value,
         tg_enabled:      document.getElementById('tgEnabled').checked,
         tg_bot_token:    document.getElementById('tgBotToken').value.trim() || null,
         tg_chat_id:      document.getElementById('tgChatId').value.trim() || null,
     };
+}
+
+async function saveNotifications(showToast = true) {
+    const payload = collectNotificationPayload();
     try {
         const r = await fetch(API + '/api/notifications', {
             method: 'POST', headers: authHdr(), body: JSON.stringify(payload),
         });
-        if (r.ok) toastSuccess('Notification settings saved');
-        else alert('Save failed');
-    } catch(e) { alert('Save failed: ' + e.message); }
+        if (r.ok) {
+            if (showToast) toastSuccess('Notification settings saved');
+            return true;
+        }
+        const d = await r.json().catch(() => ({}));
+        if (showToast) alert('Save failed: ' + (d.detail || r.statusText));
+        return false;
+    } catch(e) {
+        if (showToast) alert('Save failed: ' + e.message);
+        return false;
+    }
 }
 
 async function testWebhook() {
     const box = document.getElementById('webhookTestResult');
     box.style.display = '';
-    box.textContent = 'Sending test…';
+    box.textContent = 'Saving and sending test...';
     box.className = 'text-muted';
     try {
+        const payload = collectNotificationPayload();
+        if (!payload.webhook_url) {
+            box.textContent = 'Enter a webhook URL first';
+            box.className = 'text-danger';
+            return;
+        }
+        const saved = await saveNotifications(false);
+        if (!saved) {
+            box.textContent = 'Could not save notification settings before testing';
+            box.className = 'text-danger';
+            return;
+        }
         const r = await fetch(API + '/api/notifications/test-webhook', {
             method: 'POST', headers: authHdr(),
         });
@@ -759,10 +795,22 @@ async function testTelegram() {
     const box = document.getElementById('telegramTestResult');
     const btn = document.getElementById('testTelegramBtn');
     box.style.display = '';
-    box.textContent = 'Sending…';
+    box.textContent = 'Saving and sending...';
     box.className = 'text-muted';
     btn.disabled = true;
     try {
+        const payload = collectNotificationPayload();
+        if (!payload.tg_bot_token || !payload.tg_chat_id) {
+            box.textContent = 'Enter Telegram bot token and chat ID first';
+            box.className = 'text-danger';
+            return;
+        }
+        const saved = await saveNotifications(false);
+        if (!saved) {
+            box.textContent = 'Could not save Telegram settings before testing';
+            box.className = 'text-danger';
+            return;
+        }
         const r = await fetch(API + '/api/notifications/test-telegram', {
             method: 'POST', headers: authHdr(),
         });
@@ -776,6 +824,45 @@ async function testTelegram() {
         }
     } catch(e) {
         box.textContent = '✗ ' + e.message;
+        box.className = 'text-danger';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function testEmail() {
+    const box = document.getElementById('emailTestResult');
+    const btn = document.getElementById('testEmailBtn');
+    box.style.display = '';
+    box.textContent = 'Saving and sending...';
+    box.className = 'text-muted';
+    btn.disabled = true;
+    try {
+        const payload = collectNotificationPayload();
+        if (!payload.email_to || !payload.email_host) {
+            box.textContent = 'Enter recipient email and SMTP host first';
+            box.className = 'text-danger';
+            return;
+        }
+        const saved = await saveNotifications(false);
+        if (!saved) {
+            box.textContent = 'Could not save email settings before testing';
+            box.className = 'text-danger';
+            return;
+        }
+        const r = await fetch(API + '/api/notifications/test-email', {
+            method: 'POST', headers: authHdr(),
+        });
+        const d = await r.json();
+        if (r.ok && d.success) {
+            box.textContent = 'Email sent';
+            box.className = 'text-success';
+        } else {
+            box.textContent = (d.detail || d.message || 'Failed');
+            box.className = 'text-danger';
+        }
+    } catch(e) {
+        box.textContent = e.message;
         box.className = 'text-danger';
     } finally {
         btn.disabled = false;
