@@ -258,7 +258,8 @@ async def process_line(line: str):
                 new_severity = "high"
             elif eid == "cowrie.session.closed":
                 sess.end_time = timestamp
-                sess.duration_secs = data.get("duration")
+                raw_dur = data.get("duration")
+                sess.duration_secs = float(raw_dur) if raw_dur is not None else None
 
             sess.severity = new_severity
             sess.attack_type = new_attack_type
@@ -374,7 +375,10 @@ async def start_log_collector():
         while True:
             line = await f.readline()
             if line:
-                await process_line(line.strip())
+                try:
+                    await process_line(line.strip())
+                except Exception as exc:
+                    print(f"[collector] error processing line: {exc}", flush=True)
             else:
                 await asyncio.sleep(0.5)
                 # Detect log rotation: file shrunk
