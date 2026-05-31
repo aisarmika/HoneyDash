@@ -114,7 +114,7 @@
     </a>
     <div class="sidebar">
       <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-        <div class="image"><img src="dist/img/default-avatar.svg" class="img-circle elevation-2" alt="User"></div>
+        <div class="image"><img src="dist/img/aisar.PNG" class="img-circle elevation-2" alt="User"></div>
         <div class="info">
           <a href="#" class="d-block"><span id="sidebarUsername">Analyst</span></a>
         </div>
@@ -469,7 +469,8 @@ $(document).ready(function() {
   // Auth
   try {
     const pl = JSON.parse(atob(token.split('.')[1]));
-    document.getElementById('sidebarUsername').textContent = pl.sub || 'Analyst';
+    const rawName = pl.full_name || (pl.sub ? pl.sub.split('@')[0] : 'Analyst');
+    document.getElementById('sidebarUsername').textContent = rawName.charAt(0).toUpperCase() + rawName.slice(1);
     if (pl.role === 'admin') document.getElementById('usersNavItem').style.display = '';
   } catch(_) {}
 
