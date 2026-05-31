@@ -94,8 +94,6 @@ services:
       dockerfile: Dockerfile
     container_name: honeydash-backend
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     volumes:
       - cowrie_logs:/var/log/cowrie
       - dionaea_data:/var/dionaea          # Dionaea SQLite + logs
