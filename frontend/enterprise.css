@@ -15,6 +15,7 @@
   --hd-text:     #c9d1d9;
   --hd-text2:    #8b949e;
   --hd-text3:    #6e7681;
+  --hd-muted:    #8b949e;  /* recessive label text; AA on dark surfaces */
   --hd-blue:     #1f6feb;
   --hd-blue2:    #388bfd;
   --hd-blue3:    #58a6ff;

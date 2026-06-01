@@ -15,77 +15,49 @@
   <link rel="stylesheet" href="plugins/icheck-bootstrap/icheck-bootstrap.min.css">
   <!-- Theme style -->
   <link rel="stylesheet" href="dist/css/adminlte.min.css">
+  <link rel="stylesheet" href="dist/css/dark-theme.css">
+  <!-- HoneyDash enterprise theme (shared design system) -->
+  <link rel="stylesheet" href="enterprise.css">
   <style>
+    /* Page-specific layout only; components inherit enterprise.css */
     body.login-page {
-      background: #060b14 !important;
+      background: var(--hd-bg) !important;
       font-family: 'Source Sans Pro', sans-serif !important;
+      min-height: 100vh;
     }
     .login-box { width: 380px; }
-    .login-logo a { color: #00c8ff !important; font-size: 2rem; font-weight: 700; letter-spacing: 1px; }
-    .login-logo a b { color: #ff3d57; }
-    .login-logo small { display: block; font-size: 11px; color: #4a5568; text-transform: uppercase; letter-spacing: 2px; margin-top: -4px; font-family: 'Source Sans Pro', monospace; }
-    .card {
-      background: #0b1120 !important;
-      border: 1px solid #1a2d4a !important;
-      border-radius: 12px !important;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(0,200,255,0.04) !important;
+    .login-logo { margin-bottom: 16px; }
+    .login-logo a {
+      color: var(--hd-text) !important;
+      font-size: 1.8rem; font-weight: 700; letter-spacing: .005em;
     }
-    .login-card-body { background: transparent !important; border-radius: 12px !important; }
-    .login-box-msg { color: #6b7a99 !important; font-size: 13px !important; }
-    .form-control {
-      background: #060d1a !important;
-      border: 1px solid #1a2d4a !important;
-      color: #cdd6f4 !important;
-      border-radius: 6px !important;
+    .login-logo a i { color: var(--hd-blue3); margin-right: 9px; }
+    .login-logo a b { color: var(--hd-text); font-weight: 700; }
+    .login-logo small {
+      display: block; font-size: 10px; color: var(--hd-text3);
+      text-transform: uppercase; letter-spacing: .18em; margin-top: 4px; font-weight: 600;
     }
-    .form-control:focus {
-      border-color: #00c8ff !important;
-      box-shadow: 0 0 0 2px rgba(0,200,255,0.15) !important;
-      background: #060d1a !important;
-      color: #cdd6f4 !important;
+    .login-box .card {
+      background: var(--hd-surface) !important;
+      border: 1px solid var(--hd-border2) !important;
+      border-radius: 8px !important;
+      box-shadow: 0 16px 48px rgba(0,0,0,.5) !important;
     }
-    .form-control::placeholder { color: #3a4a5e !important; }
-    .input-group-text {
-      background: #0d1626 !important;
-      border-color: #1a2d4a !important;
-      color: #4a5568 !important;
+    .login-card-body { background: transparent !important; }
+    .login-box-msg { color: var(--hd-text2) !important; font-size: 13px !important; }
+    /* "Remember me" is a control label, not a field label — keep it readable */
+    .icheck-primary label {
+      color: var(--hd-text2) !important; font-size: 12px !important;
+      text-transform: none !important; letter-spacing: normal !important;
+      font-weight: 400 !important; margin-bottom: 0 !important;
     }
-    .btn-primary {
-      background: rgba(0,200,255,0.12) !important;
-      border-color: rgba(0,200,255,0.5) !important;
-      color: #00c8ff !important;
-      font-weight: 600 !important;
-      letter-spacing: 0.5px;
-      transition: all 0.2s !important;
-    }
-    .btn-primary:hover {
-      background: rgba(0,200,255,0.22) !important;
-      box-shadow: 0 0 16px rgba(0,200,255,0.25) !important;
-    }
-    .icheck-primary label { color: #6b7a99 !important; font-size: 12px !important; }
-    .text-muted { color: #4a5568 !important; }
-    .alert-danger { background: rgba(255,61,87,0.12) !important; border-color: rgba(255,61,87,0.3) !important; color: #ff6b7a !important; font-size: 13px !important; }
-    /* Scan-line effect */
-    body::before {
-      content: '';
-      position: fixed; inset: 0; pointer-events: none; z-index: 9999;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
-    }
-    /* Grid background */
-    body::after {
-      content: '';
-      position: fixed; inset: 0; pointer-events: none; z-index: 0;
-      background-image: linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-    }
-    .login-box { position: relative; z-index: 1; }
   </style>
 </head>
 
 <body class="hold-transition login-page">
   <div class="login-box">
     <div class="login-logo">
-      <a href="dashboard.html"><b>Honey</b>Dash<small>Threat Intelligence Platform</small></a>
+      <a href="dashboard.html"><i class="fas fa-shield-alt"></i><b>Honey</b>Dash<small>Threat Intelligence Platform</small></a>
     </div>
     <!-- /.login-logo -->
     <div class="card">

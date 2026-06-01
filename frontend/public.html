@@ -9,46 +9,47 @@
   <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
   <link rel="stylesheet" href="dist/css/adminlte.min.css">
   <link rel="stylesheet" href="dist/css/dark-theme.css">
+  <link rel="stylesheet" href="enterprise.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
-    /* ── Public-specific overrides ── */
-    body { background: #060b14; color: #c9d1d9; }
+    /* ── Public view — built on the --hd-* enterprise system ── */
+    body { background: var(--hd-bg); color: var(--hd-text); }
 
     .public-header {
-      background: linear-gradient(135deg, #080f1e 0%, #0b1a2e 100%);
-      border-bottom: 1px solid rgba(0,200,255,0.15);
+      background: var(--hd-surface);
+      border-bottom: 1px solid var(--hd-border);
       padding: 0 24px;
       display: flex; align-items: center; justify-content: space-between;
-      height: 56px; position: sticky; top: 0; z-index: 1000;
+      height: 56px; position: sticky; top: 0; z-index: 1030;
     }
     .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .brand-icon { color: #00c8ff; font-size: 22px; }
-    .brand-name { color: #e6edf3; font-weight: 700; font-size: 18px; letter-spacing: 0.5px; }
-    .brand-name span { color: #00c8ff; }
+    .brand-icon { color: var(--hd-blue3); font-size: 22px; }
+    .brand-name { color: var(--hd-text); font-weight: 700; font-size: 18px; letter-spacing: 0.02em; }
+    .brand-name span { color: var(--hd-blue3); }
 
     .viewer-badge {
-      background: rgba(0,200,255,0.1);
-      border: 1px solid rgba(0,200,255,0.3);
-      color: #00c8ff;
-      font-size: 11px; font-weight: 600; letter-spacing: 1px;
+      background: rgba(31,111,235,0.12);
+      border: 1px solid rgba(31,111,235,0.3);
+      color: var(--hd-blue3);
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
       padding: 3px 10px; border-radius: 4px; text-transform: uppercase;
     }
 
     .header-right { display: flex; align-items: center; gap: 14px; }
     .login-btn {
-      background: rgba(0,200,255,0.1);
-      border: 1px solid rgba(0,200,255,0.4);
-      color: #00c8ff; font-size: 12px; font-weight: 600;
+      background: rgba(31,111,235,0.12);
+      border: 1px solid rgba(31,111,235,0.4);
+      color: var(--hd-blue3); font-size: 12px; font-weight: 600;
       padding: 6px 14px; border-radius: 5px; text-decoration: none;
-      transition: all 0.2s;
+      transition: background .15s, border-color .15s;
     }
-    .login-btn:hover { background: rgba(0,200,255,0.2); color: #00c8ff; text-decoration: none; }
+    .login-btn:hover { background: rgba(31,111,235,0.22); color: var(--hd-blue3); text-decoration: none; }
 
     .live-dot {
       display: inline-block; width: 8px; height: 8px;
-      background: #28a745; border-radius: 50%;
-      animation: pulse 2s infinite;
+      background: var(--hd-green3); border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
     }
     @keyframes pulse {
       0%, 100% { opacity:1; transform:scale(1); }
@@ -59,14 +60,15 @@
     .public-body { padding: 24px; max-width: 1400px; margin: 0 auto; }
 
     .section-title {
-      font-size: 11px; font-weight: 700; letter-spacing: 2px;
-      text-transform: uppercase; color: rgba(0,200,255,0.6);
+      font-size: 10px; font-weight: 800; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--hd-text2);
       margin-bottom: 14px; margin-top: 28px;
       display: flex; align-items: center; gap: 8px;
     }
+    .section-title i { color: var(--hd-blue3); }
     .section-title::after {
       content: ''; flex: 1; height: 1px;
-      background: linear-gradient(90deg, rgba(0,200,255,0.2), transparent);
+      background: linear-gradient(90deg, rgba(88,166,255,0.22), transparent);
     }
 
     /* ── Stat boxes ── */
@@ -76,35 +78,31 @@
       gap: 14px; margin-bottom: 6px;
     }
     .stat-card {
-      background: #0b1120;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 8px; padding: 16px 18px;
-      position: relative; overflow: hidden;
+      background: var(--hd-surface);
+      border: 1px solid var(--hd-border);
+      border-top: 2px solid var(--accent, var(--hd-blue3));
+      border-radius: 6px; padding: 16px 18px;
       transition: border-color 0.2s;
     }
-    .stat-card:hover { border-color: rgba(0,200,255,0.25); }
-    .stat-card::before {
-      content: ''; position: absolute;
-      top: 0; left: 0; width: 3px; height: 100%;
-      background: var(--accent, #00c8ff);
-    }
-    .stat-label { font-size: 11px; color: #8b949e; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-value { font-size: 26px; font-weight: 700; color: #e6edf3; line-height: 1; font-family: 'JetBrains Mono', monospace; }
-    .stat-sub   { font-size: 11px; color: #8b949e; margin-top: 4px; }
+    .stat-card:hover { border-color: var(--hd-border2); border-top-color: var(--accent, var(--hd-blue3)); }
+    .stat-label { font-size: 10px; color: var(--hd-text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; }
+    .stat-value { font-size: 26px; font-weight: 700; color: var(--hd-text); line-height: 1; font-family: 'SFMono-Regular', Consolas, monospace; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+    .stat-sub   { font-size: 11px; color: var(--hd-text3); margin-top: 4px; }
 
     /* ── Cards ── */
     .pub-card {
-      background: #0b1120;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 8px; padding: 20px;
+      background: var(--hd-surface);
+      border: 1px solid var(--hd-border);
+      border-radius: 6px; padding: 20px;
       margin-bottom: 20px;
     }
     .pub-card-title {
-      font-size: 13px; font-weight: 600; color: #e6edf3;
+      font-size: 11px; font-weight: 700; color: var(--hd-text);
+      text-transform: uppercase; letter-spacing: .07em;
       margin-bottom: 16px;
       display: flex; align-items: center; gap: 8px;
     }
-    .pub-card-title i { color: #00c8ff; }
+    .pub-card-title i { color: var(--hd-blue3); }
 
     /* ── Map ── */
     #public-map { height: 360px; width: 100%; border-radius: 6px; }
@@ -116,7 +114,7 @@
     .activity-list { list-style: none; padding: 0; margin: 0; }
     .activity-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 10px 0; border-bottom: 1px solid var(--hd-border);
     }
     .activity-item:last-child { border-bottom: none; }
     .activity-icon {
@@ -124,47 +122,45 @@
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; font-size: 13px;
     }
-    .activity-icon.high   { background: rgba(255,61,87,0.15); color: #ff3d57; }
-    .activity-icon.medium { background: rgba(255,193,7,0.15);  color: #ffc107; }
-    .activity-icon.low    { background: rgba(23,162,184,0.15); color: #17a2b8; }
+    .activity-icon.high   { background: rgba(248,81,73,0.15);  color: var(--hd-red3); }
+    .activity-icon.medium { background: rgba(210,153,34,0.15); color: var(--hd-amber2); }
+    .activity-icon.low    { background: rgba(31,111,235,0.15); color: var(--hd-blue3); }
     .activity-meta { flex: 1; min-width: 0; }
-    .activity-type { font-size: 13px; color: #e6edf3; font-weight: 500; }
-    .activity-detail { font-size: 11px; color: #8b949e; margin-top: 1px; }
-    .activity-time { font-size: 11px; color: #8b949e; white-space: nowrap; }
-
-    .badge-high   { background: rgba(255,61,87,0.15); color: #ff6b7a; border: 1px solid rgba(255,61,87,0.3); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-    .badge-medium { background: rgba(255,193,7,0.15); color: #ffd454; border: 1px solid rgba(255,193,7,0.3); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-    .badge-low    { background: rgba(23,162,184,0.15); color: #63d5ea; border: 1px solid rgba(23,162,184,0.3); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .activity-type { font-size: 13px; color: var(--hd-text); font-weight: 500; }
+    .activity-detail { font-size: 11px; color: var(--hd-text2); margin-top: 1px; }
+    .activity-time { font-size: 11px; color: var(--hd-text2); white-space: nowrap; }
+    /* .badge-high / .badge-medium / .badge-low come from enterprise.css */
 
     /* ── Anonymised notice ── */
     .anon-notice {
-      background: rgba(0,200,255,0.05);
-      border: 1px solid rgba(0,200,255,0.15);
+      background: rgba(31,111,235,0.07);
+      border: 1px solid rgba(31,111,235,0.2);
       border-radius: 6px; padding: 10px 14px;
-      font-size: 12px; color: #8b949e;
+      font-size: 12px; color: var(--hd-text2);
       display: flex; align-items: center; gap: 8px;
       margin-bottom: 20px;
     }
-    .anon-notice i { color: #00c8ff; flex-shrink: 0; }
+    .anon-notice i { color: var(--hd-blue3); flex-shrink: 0; }
 
     /* ── Footer ── */
     .public-footer {
       text-align: center; padding: 28px 0 20px;
-      font-size: 12px; color: #8b949e;
-      border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px; color: var(--hd-text3);
+      border-top: 1px solid var(--hd-border);
       margin-top: 20px;
     }
-    .public-footer a { color: #00c8ff; text-decoration: none; }
+    .public-footer a { color: var(--hd-blue3); text-decoration: none; }
+    .public-footer a:hover { text-decoration: underline; }
 
     /* ── Time selector ── */
     .range-btns { display: flex; gap: 6px; }
     .range-btn {
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-      color: #8b949e; font-size: 11px; font-weight: 600; padding: 3px 10px;
+      background: var(--hd-surface2); border: 1px solid var(--hd-border2);
+      color: var(--hd-text2); font-size: 11px; font-weight: 600; padding: 3px 10px;
       border-radius: 4px; cursor: pointer; transition: all 0.15s;
     }
     .range-btn.active, .range-btn:hover {
-      background: rgba(0,200,255,0.1); border-color: rgba(0,200,255,0.4); color: #00c8ff;
+      background: rgba(31,111,235,0.12); border-color: var(--hd-blue2); color: var(--hd-blue3);
     }
 
     /* responsive grid tweaks */
@@ -172,6 +168,10 @@
       .public-header { padding: 0 14px; }
       .public-body   { padding: 14px; }
       .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .live-dot { animation: none; }
     }
   </style>
 </head>
