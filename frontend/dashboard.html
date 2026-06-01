@@ -60,7 +60,7 @@
     /* ── Toast ──────────────────────────────────────────────── */
     #toast-container {
       position:fixed; bottom:20px; right:20px;
-      z-index:9999; display:flex; flex-direction:column; gap:8px;
+      z-index:1080; display:flex; flex-direction:column; gap:8px;
     }
     .hd-toast {
       min-width:300px; max-width:380px;
@@ -139,27 +139,34 @@
     /* ── Enterprise SOC grid ───────────────────────────────────────── */
     .soc-section-label {
       display:flex; align-items:center; gap:8px;
-      margin:10px 0 8px; padding:6px 10px;
-      border:1px solid rgba(88,166,255,.18);
-      background:linear-gradient(90deg, rgba(88,166,255,.08), rgba(57,211,187,.03));
-      border-radius:6px;
+      margin:10px 0 8px; padding:5px 10px;
+      border:1px solid var(--hd-border2);
+      background:var(--hd-surface2);
+      border-radius:4px;
       color:var(--hd-text2);
-      font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+      font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
     }
     .soc-section-label::after {
       content:''; height:1px; flex:1;
-      background:linear-gradient(90deg, rgba(88,166,255,.22), transparent);
+      background:linear-gradient(90deg, var(--hd-border2), transparent);
+    }
+
+    /* ── Reduced motion ─────────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      .live-indicator, .dot-online, #wsStatusDot.online { animation: none; }
+      .feed-new { animation: none; }
+      .hd-toast { animation: none; }
     }
     .soc-grid .card {
       min-height: 100%;
-      background:linear-gradient(180deg, rgba(28,35,51,.98), rgba(22,27,34,.98)) !important;
-      border-color:rgba(139,148,158,.22) !important;
-      box-shadow:0 8px 22px rgba(0,0,0,.24) !important;
+      background:var(--hd-surface2) !important;
+      border-color:var(--hd-border2) !important;
+      box-shadow:0 4px 16px rgba(0,0,0,.22) !important;
     }
     .soc-grid .card-header {
       min-height:42px;
-      background:rgba(13,17,23,.42) !important;
-      border-bottom-color:rgba(139,148,158,.18) !important;
+      background:var(--hd-surface) !important;
+      border-bottom-color:var(--hd-border) !important;
     }
     .soc-grid .card-title {
       font-size:10.5px !important;
@@ -196,7 +203,7 @@
       <i class="fas fa-clock"></i>&nbsp;Last:&nbsp;<span id="lastEventAgo">—</span>
       <div class="tb-right">
         <span><span id="wsStatusDot"></span><span id="wsStatusText" style="font-size:12px">Connecting…</span></span>
-        <span id="currentTime" style="font-size:11px;color:#6c757d"></span>
+        <span id="currentTime" style="font-size:11px;color:var(--hd-text3)"></span>
       </div>
     </div>
 
@@ -391,7 +398,7 @@
             </div>
             <div class="col-12 col-sm-6 col-md-3">
               <div class="info-box">
-                <span class="info-box-icon elevation-1" style="background:#fd7e14"><i class="fas fa-file-download" style="color:#fff"></i></span>
+                <span class="info-box-icon elevation-1" style="background:var(--hd-amber3)"><i class="fas fa-file-download" style="color:#fff"></i></span>
                 <div class="info-box-content">
                   <span class="info-box-text">Files Downloaded (24h)</span>
                   <span class="info-box-number" id="files24h">—</span>
@@ -400,7 +407,7 @@
             </div>
             <div class="col-12 col-sm-6 col-md-3">
               <div class="info-box">
-                <span class="info-box-icon elevation-1" style="background:#9c27b0"><i class="fas fa-bug" style="color:#fff"></i></span>
+                <span class="info-box-icon elevation-1" style="background:var(--hd-purple2)"><i class="fas fa-bug" style="color:#fff"></i></span>
                 <div class="info-box-content">
                   <span class="info-box-text">Malware Captures</span>
                   <span class="info-box-number" id="malwareCaptures">—</span>
@@ -413,7 +420,7 @@
           <div class="row">
             <div class="col-12 col-sm-6 col-md-3">
               <div class="info-box" style="cursor:pointer" onclick="document.getElementById('mlAnomalyCard').scrollIntoView({behavior:'smooth'})">
-                <span class="info-box-icon elevation-1" style="background:linear-gradient(135deg,#3b0764,#7c3aed)">
+                <span class="info-box-icon elevation-1" style="background:var(--hd-purple)">
                   <i class="fas fa-robot" style="color:#fff"></i>
                 </span>
                 <div class="info-box-content">
