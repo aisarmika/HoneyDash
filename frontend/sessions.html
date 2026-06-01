@@ -325,9 +325,14 @@
         <div class="card-tools">
             <span id="liveIndicator" style="margin-right:8px">
                 <span class="live-dot"></span>
-                <span style="font-size:11px;color:#8b949e;margin-left:4px">LIVE</span>
+                <span style="font-size:11px;color:var(--hd-text3);margin-left:4px">LIVE</span>
             </span>
-            <button class="btn btn-success btn-sm" onclick="exportSessions('csv')">
+            <!-- Density toggle -->
+            <span class="hd-density-toggle" title="Table density">
+                <button class="hd-density-btn active" data-density="comfortable" onclick="setDensity('comfortable')" title="Comfortable"><i class="fas fa-bars"></i></button>
+                <button class="hd-density-btn" data-density="compact" onclick="setDensity('compact')" title="Compact"><i class="fas fa-grip-lines"></i></button>
+            </span>
+            <button class="btn btn-success btn-sm ml-1" onclick="exportSessions('csv')">
                 <i class="fas fa-download mr-1"></i>Export CSV
             </button>
             <button class="btn btn-secondary btn-sm ml-1" onclick="exportSessions('json')">
@@ -335,7 +340,7 @@
             </button>
         </div>
     </div>
-    <div class="card-body p-0">
+    <div class="card-body p-0 hd-density-comfortable" id="sessionsTableWrap">
         <table id="sessionsTable" class="table table-bordered table-hover table-sm mb-0">
             <thead>
                 <tr>
@@ -531,6 +536,21 @@
         // Auth guard
         const token = localStorage.getItem('hd_token');
         if (!token) { window.location.href = 'login.html'; }
+
+        // ── Density toggle ───────────────────────────────────────────────
+        function setDensity(mode) {
+            localStorage.setItem('hd_density', mode);
+            const wrap = document.getElementById('sessionsTableWrap');
+            if (wrap) {
+                wrap.classList.toggle('hd-density-compact',     mode === 'compact');
+                wrap.classList.toggle('hd-density-comfortable', mode === 'comfortable');
+            }
+            document.querySelectorAll('.hd-density-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.density === mode);
+            });
+        }
+        // Apply saved preference on load
+        setDensity(localStorage.getItem('hd_density') || 'comfortable');
 
         function authHeaders() {
             return { 'Authorization': 'Bearer ' + token };

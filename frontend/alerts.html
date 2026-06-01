@@ -282,12 +282,17 @@
                     <option value="escalated">Escalated</option>
                     <option value="false_positive">False Positive</option>
                 </select>
+                <!-- Density toggle -->
+                <span class="hd-density-toggle ml-1" title="Table density">
+                    <button class="hd-density-btn active" data-density="comfortable" onclick="setDensity('comfortable')" title="Comfortable"><i class="fas fa-bars"></i></button>
+                    <button class="hd-density-btn" data-density="compact" onclick="setDensity('compact')" title="Compact"><i class="fas fa-grip-lines"></i></button>
+                </span>
                 <button class="btn btn-sm btn-outline-primary ml-1" onclick="exportAlerts()">
                   <i class="fas fa-download"></i> Export CSV
                 </button>
               </div>
             </div>
-            <div class="card-body p-0">
+            <div class="card-body p-0 hd-density-comfortable" id="alertsTableWrap">
               <table class="table table-bordered table-striped mb-0" id="alertsTable">
                 <thead class="thead-dark">
                   <tr>
@@ -414,6 +419,20 @@
 
     const token = localStorage.getItem('hd_token');
     if (!token) { window.location.href = 'login.html'; }
+
+    // ── Density toggle ─────────────────────────────────────────────────
+    function setDensity(mode) {
+      localStorage.setItem('hd_density', mode);
+      const wrap = document.getElementById('alertsTableWrap');
+      if (wrap) {
+        wrap.classList.toggle('hd-density-compact',     mode === 'compact');
+        wrap.classList.toggle('hd-density-comfortable', mode === 'comfortable');
+      }
+      document.querySelectorAll('.hd-density-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.density === mode);
+      });
+    }
+    setDensity(localStorage.getItem('hd_density') || 'comfortable');
 
     function authHeaders() {
       return { 'Authorization': 'Bearer ' + token };

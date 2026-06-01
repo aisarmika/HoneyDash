@@ -782,6 +782,46 @@ tr.ack-row        { opacity: .55; }
 .card.card-danger.card-outline   { border-top-color: var(--hd-red2) !important; }
 .card.card-success.card-outline  { border-top-color: var(--hd-green2) !important; }
 
+/* ── Density toggle ─────────────────────────────────────────────────── */
+.hd-density-toggle {
+  display: inline-flex;
+  background: var(--hd-surface2);
+  border: 1px solid var(--hd-border2);
+  border-radius: 4px;
+  padding: 2px;
+  gap: 1px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+.hd-density-btn {
+  width: 26px; height: 22px;
+  border: none; border-radius: 3px;
+  background: transparent; color: var(--hd-text2);
+  cursor: pointer; font-size: 10px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s;
+  line-height: 1;
+}
+.hd-density-btn.active { background: var(--hd-surface3); color: var(--hd-text); }
+.hd-density-btn:hover:not(.active) { color: var(--hd-text); }
+
+/* Comfortable (default) — current spacing */
+.hd-density-comfortable .table td,
+.hd-density-comfortable .table th {
+  padding: 7px 10px !important;
+  font-size: 12.5px !important;
+}
+
+/* Compact — analyst sees ~40% more rows */
+.hd-density-compact .table td,
+.hd-density-compact .table th {
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+}
+.hd-density-compact .badge { font-size: 9.5px !important; padding: 1px 5px !important; }
+.hd-density-compact .btn-sm { padding: 1px 6px !important; font-size: 10px !important; }
+
 /* ── Reduced motion — global ────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .live-dot,
