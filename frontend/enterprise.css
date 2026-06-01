@@ -764,3 +764,32 @@ tr.ack-row        { opacity: .55; }
 /* ── Column sizing helpers ──────────────────────────────────────────── */
 .col-nowrap { white-space: nowrap !important; }
 .col-tight  { padding: 4px 6px !important; }
+
+/* ── info-box typography — consistent across all pages ─────────────── */
+.info-box                  { background: var(--hd-surface) !important; border: 1px solid var(--hd-border) !important; border-radius: 6px !important; box-shadow: none !important; }
+.info-box-text             { color: var(--hd-text2) !important; font-size: 11px !important; text-transform: uppercase !important; letter-spacing: .06em !important; font-weight: 700 !important; }
+.info-box-number           { color: var(--hd-text) !important; font-size: 1.5rem !important; font-weight: 700 !important; font-variant-numeric: tabular-nums !important; }
+.info-box-icon             { border-radius: 6px 0 0 6px !important; }
+
+/* ── card-header title — consistent across all pages ───────────────── */
+.card-title                { font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: .07em !important; color: var(--hd-text2) !important; }
+.card                      { background: var(--hd-surface) !important; border: 1px solid var(--hd-border) !important; border-radius: 6px !important; }
+.card-header               { background: var(--hd-surface) !important; border-bottom: 1px solid var(--hd-border) !important; padding: 10px 14px !important; }
+.card-body                 { color: var(--hd-text) !important; }
+.card.card-outline         { border-top-width: 2px !important; }
+.card.card-primary.card-outline  { border-top-color: var(--hd-blue2) !important; }
+.card.card-warning.card-outline  { border-top-color: var(--hd-amber2) !important; }
+.card.card-danger.card-outline   { border-top-color: var(--hd-red2) !important; }
+.card.card-success.card-outline  { border-top-color: var(--hd-green2) !important; }
+
+/* ── Reduced motion — global ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .threat-banner.threat-critical,
+  .dot-online,
+  .live-indicator,
+  #wsStatusDot.online      { animation: none !important; }
+  *,
+  *::before,
+  *::after                 { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
