@@ -437,11 +437,12 @@ async def start_dionaea_collector() -> None:
                     ts = _ts(row["connection_timestamp"])
                     dst_port = row["local_port"]
                     proto = _protocol(row["connection_protocol"], dst_port)
-                    # Use md5 as the sha256 stand-in (Dionaea only stores MD5)
+                    # Use md5 as the sha256 stand-in (Dionaea only stores MD5).
+                    # "md5:{32-char-md5}" = 36 chars, always fits String(64).
                     pseudo_sha256 = f"md5:{md5}"
 
                     await _upsert_malware(
-                        sha256=pseudo_sha256[:64],
+                        sha256=pseudo_sha256,
                         md5=md5,
                         sha512=None,
                         file_size=None,

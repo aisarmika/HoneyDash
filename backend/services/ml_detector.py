@@ -95,7 +95,23 @@ async def run_ml_detection():
 
 
 async def score_single_session(session_id: str) -> None:
-    """Heuristic instant-score for a newly closed session (no full retrain required)."""
+    """Heuristic instant-score for a newly closed session (no full retrain required).
+
+    Uses a weighted suspicion model rather than flat thresholds so that
+    routine honeypot noise (low-attempt brute-force, login-only sessions)
+    doesn't flood the anomaly feed before the Isolation Forest has trained.
+
+    Suspicion weights (0.0 – normal, ≥0.5 = anomaly):
+      - Mass brute-force (>200 attempts): +0.5
+      - Heavy brute-force (>80 attempts): +0.3
+      - Light brute-force (>30 attempts): +0.1
+      - Successful login + post-exploitation commands (>3): +0.6
+      - Successful login + any commands: +0.3
+      - Successful login alone: +0.1 (honeypots accept logins by design)
+      - File downloaded: +0.5 (strong signal regardless of login status)
+      - High command count without login (>30): +0.3 (worm/scanner probing)
+      - Moderate command count without login (>15): +0.1
+    """
     async with AsyncSessionLocal() as db:
         try:
             result = await db.execute(
@@ -105,19 +121,48 @@ async def score_single_session(session_id: str) -> None:
             if not sess:
                 return
 
-            is_anomaly = bool(
-                (sess.login_attempts or 0) > 20
-                or sess.login_success
-                or (sess.files_downloaded or 0) > 0
-                or (sess.commands_run or 0) > 5
-            )
+            login_att = sess.login_attempts or 0
+            cmds      = sess.commands_run   or 0
+            files     = sess.files_downloaded or 0
+            success   = bool(sess.login_success)
+
+            suspicion = 0.0
+
+            # Brute-force volume
+            if login_att > 200:
+                suspicion += 0.5
+            elif login_att > 80:
+                suspicion += 0.3
+            elif login_att > 30:
+                suspicion += 0.1
+
+            # Post-exploitation after successful login
+            if success and cmds > 3:
+                suspicion += 0.6
+            elif success and cmds > 0:
+                suspicion += 0.3
+            elif success:
+                suspicion += 0.1  # login accepted but no follow-up commands
+
+            # File download — strongest single indicator
+            if files > 0:
+                suspicion += 0.5
+
+            # High command volume without ever logging in (worm/scanner)
+            if not success:
+                if cmds > 30:
+                    suspicion += 0.3
+                elif cmds > 15:
+                    suspicion += 0.1
+
+            is_anomaly = suspicion >= 0.5
+            # Match Isolation Forest convention: 0 = normal, -1 = highly anomalous
+            anomaly_score = max(-1.0, -suspicion)
+
             await db.execute(
                 update(Session)
                 .where(Session.session_id == session_id)
-                .values(
-                    is_anomaly=is_anomaly,
-                    anomaly_score=-0.5 if is_anomaly else 0.1,
-                )
+                .values(is_anomaly=is_anomaly, anomaly_score=anomaly_score)
             )
             await db.commit()
         except Exception as exc:

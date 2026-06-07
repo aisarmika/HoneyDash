@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..config import settings
 from ..database import AsyncSessionLocal
-from ..models import IPEnrichment
+from ..models import Event, IPEnrichment, Session
 
 enrichment_queue: asyncio.Queue = asyncio.Queue()
 enrichment_in_flight: Set[str] = set()
@@ -92,6 +92,42 @@ def _compute_severity_from_vt(vt_malicious: int | None) -> str | None:
     if vt_malicious >= 1:
         return "medium"
     return None
+
+
+_SEV_RANK = {"low": 0, "medium": 1, "high": 2}
+
+
+async def _upgrade_severity_from_vt(ip: str, new_sev: str) -> None:
+    """Upgrade severity of all events/sessions from this IP if VT flags it as malicious.
+
+    Only ever promotes severity (low→medium, low→high, medium→high).
+    Never demotes a session that was already classified higher by protocol analysis.
+    """
+    from sqlalchemy import update as sa_update
+
+    new_rank = _SEV_RANK.get(new_sev, 0)
+    # Severities strictly below the new VT-derived level
+    upgradeable = [s for s, r in _SEV_RANK.items() if r < new_rank]
+    if not upgradeable:
+        return
+
+    async with AsyncSessionLocal() as db:
+        for sev in upgradeable:
+            await db.execute(
+                sa_update(Event)
+                .where(Event.src_ip == ip, Event.severity == sev)
+                .values(severity=new_sev)
+            )
+            await db.execute(
+                sa_update(Session)
+                .where(Session.src_ip == ip, Session.severity == sev)
+                .values(severity=new_sev)
+            )
+        await db.commit()
+    print(
+        f"[enrichment] VT: upgraded {ip} events/sessions → severity={new_sev}",
+        flush=True,
+    )
 
 
 async def _enrich_ip(ip: str):
@@ -201,6 +237,11 @@ async def _enrich_ip(ip: str):
         stmt = stmt.on_conflict_do_update(index_elements=["ip_address"], set_=update_vals)
         await db.execute(stmt)
         await db.commit()
+
+    # Upgrade event/session severity if VT confirms this IP is malicious
+    vt_sev = _compute_severity_from_vt(vt_malicious)
+    if vt_sev:
+        await _upgrade_severity_from_vt(ip, vt_sev)
 
     # Broadcast enrichment update to all WebSocket clients
     from .broadcaster import manager
