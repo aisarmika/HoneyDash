@@ -25,6 +25,7 @@ async def run_purge(db=None) -> dict:
 
         events_cutoff = datetime.utcnow() - timedelta(days=cfg.events_days)
         sessions_cutoff = datetime.utcnow() - timedelta(days=cfg.sessions_days)
+        enrichment_cutoff = datetime.utcnow() - timedelta(days=cfg.enrichment_days)
 
         # Delete old events
         ev_result = await db.execute(
@@ -39,12 +40,19 @@ async def run_purge(db=None) -> dict:
         )
         deleted_sessions = sess_result.rowcount
 
+        # Delete old IP enrichment cache entries
+        enrich_result = await db.execute(
+            delete(IPEnrichment).where(IPEnrichment.enriched_at < enrichment_cutoff)
+        )
+        deleted_enrichments = enrich_result.rowcount
+
         cfg.last_purge_at = datetime.utcnow()
         await db.commit()
 
         summary = {
             "deleted_events": deleted_events,
             "deleted_sessions": deleted_sessions,
+            "deleted_enrichments": deleted_enrichments,
             "events_cutoff": events_cutoff.isoformat(),
             "sessions_cutoff": sessions_cutoff.isoformat(),
             "purged_at": cfg.last_purge_at.isoformat(),

@@ -302,8 +302,9 @@
                 </div>
                 <div class="col-md-6">
                   <p class="text-muted small mb-1" style="text-transform:uppercase;letter-spacing:.05em;font-size:10px">VirusTotal</p>
-                  <div class="form-group mb-1"><label class="small">API Key</label><input type="password" class="form-control" id="vtKey" placeholder="Paste VT API key here"></div>
-                  <small class="text-muted">Set via <code>VT_API_KEY</code> env variable in <code>backend/.env</code></small>
+                  <p class="text-muted small mb-1">Malware reputation scoring. API key is loaded from the server environment — it cannot be changed here.</p>
+                  <span id="vtStatusBadge" class="cfg-tag mt-1 d-inline-block" style="background:rgba(255,255,255,0.07);color:var(--hd-text3)"><i class="fas fa-key mr-1"></i>Env-configured</span>
+                  <div class="mt-2"><small class="text-muted">Configure key via <code>VT_API_KEY</code> in <code>backend/.env</code>, then restart the backend.</small></div>
                 </div>
               </div>
             </div>
@@ -687,8 +688,9 @@ async function triggerPurge() {
         res.style.display = '';
         if (r.ok && d.success) {
             res.className = 'alert alert-success';
+            const enrichMsg = (d.deleted_enrichments != null) ? `, ${d.deleted_enrichments} enrichments` : '';
             res.innerHTML = `<i class="fas fa-check-circle mr-1"></i><strong>Purge complete:</strong>
-                ${d.deleted_events} events and ${d.deleted_sessions} sessions deleted.
+                ${d.deleted_events} events, ${d.deleted_sessions} sessions${enrichMsg} deleted.
                 Completed at ${new Date(d.purged_at).toLocaleString()}.`;
             loadRetention();
         } else {
@@ -783,7 +785,7 @@ async function testWebhook() {
             method: 'POST', headers: authHdr(),
         });
         const d = await r.json();
-        box.textContent = d.success ? '✓ ' + d.message : '✗ ' + d.message;
+        box.textContent = d.success ? '✓ ' + d.message : '✗ ' + (d.message || d.detail || 'Request failed');
         box.className = d.success ? 'text-success' : 'text-danger';
     } catch(e) {
         box.textContent = '✗ ' + e.message;
