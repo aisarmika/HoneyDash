@@ -21,9 +21,14 @@
   <style>
     /* Page-specific layout only; components inherit enterprise.css */
     body.login-page {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      height: 100vh !important;
+      min-height: 100vh;
       background: var(--hd-bg) !important;
       font-family: 'Source Sans Pro', sans-serif !important;
-      min-height: 100vh;
     }
     .login-box { width: 380px; }
     .login-logo { margin-bottom: 16px; }
