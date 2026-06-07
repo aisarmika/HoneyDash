@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"   # DB accessible from localhost only — not exposed to internet
     networks:
       - honeydash-net
     healthcheck:
@@ -41,7 +41,7 @@ services:
     # password into pgadmin4.db, then hands off to /entrypoint.sh
     entrypoint: ["/bin/sh", "/pgadmin4/init.sh"]
     ports:
-      - "5050:80"
+      - "127.0.0.1:5050:80"     # pgAdmin: use SSH tunnel to access (ssh -L 5050:localhost:5050 user@vps)
     volumes:
       - pgadmin_data:/var/lib/pgadmin          # persist config across restarts
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro

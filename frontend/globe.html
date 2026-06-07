@@ -453,13 +453,17 @@ function onLiveEvent(ev) {
 
 function onEnrichment(data) {
   if (!data.lat || !data.lng) return;
+  const alreadyKnown = !!ipGeoCache[data.src_ip];
   ipGeoCache[data.src_ip] = { lat:data.lat, lng:data.lng, country:data.country };
   const exists = globePoints.some(p => p.lat===data.lat && p.lng===data.lng && p.color==='#ff4444');
   if (!exists) {
     globePoints = [...globePoints, { lat:data.lat, lng:data.lng, size:0.22, color:'#ff4444', label:`🔴 ${data.country||data.src_ip}` }];
     globeInstance.pointsData(globePoints);
   }
-  fireArc(data.lat, data.lng, data.severity||'low', `${data.country||data.src_ip} → Honeypot`);
+  // Only fire an arc when this is a newly enriched IP, not a cache refresh for an already-known attacker
+  if (!alreadyKnown) {
+    fireArc(data.lat, data.lng, data.severity||'low', `${data.country||data.src_ip} → Honeypot`);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════

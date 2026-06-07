@@ -3,14 +3,14 @@ import csv
 import io
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth import get_current_user
 from ..database import get_db
-from ..models import Event, IPEnrichment, Session
+from ..models import Event, IPEnrichment, Session, User
 
 router = APIRouter()
 
@@ -335,8 +335,13 @@ async def export_csv(
     days: int = Query(7, ge=1, le=365),
     sensor: str = Query(""),
     db: AsyncSession = Depends(get_db),
-    _user: str = Depends(get_current_user),
+    email: str = Depends(get_current_user),
 ):
+    # CSV contains captured passwords/credentials — restrict to analyst/admin only
+    from sqlalchemy import select as _select
+    _u = await db.scalar(_select(User).where(User.email == email))
+    if not _u or _u.role == "viewer":
+        raise HTTPException(status_code=403, detail="Analyst or Admin role required to export data")
     since = _since(days)
     sensor_sql = "AND ev.sensor = :sensor" if sensor else ""
 
