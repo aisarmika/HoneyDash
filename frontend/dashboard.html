@@ -1154,10 +1154,32 @@
     'MSSQL Brute Force':       { id:'T1110.001', name:'Brute Force: Password Guessing',     tactic:'Credential Access',  color:'#e74c3c' },
     'SIP Scanning':            { id:'T1046',     name:'Network Service Discovery',           tactic:'Discovery',          color:'#27ae60' },
     'Telnet Attack':           { id:'T1021.005', name:'Remote Services: VNC',               tactic:'Lateral Movement',   color:'#2980b9' },
+    'Memcached Abuse':         { id:'T1498.002', name:'Reflection Amplification',            tactic:'Impact',             color:'#d35400' },
+    'Elasticsearch Probe':     { id:'T1190',     name:'Exploit Public-Facing Application',   tactic:'Initial Access',     color:'#c0392b' },
+    'PPTP VPN Probe':          { id:'T1046',     name:'Network Service Discovery',           tactic:'Discovery',          color:'#27ae60' },
   };
 
+  // Keyword fallback so unmapped types (generic probes + the remote/friend
+  // honeypot's custom attack_type strings) still resolve to a sensible technique.
+  const MITRE_FALLBACK = [
+    [/brute/i,                      { id:'T1110.001', name:'Brute Force: Password Guessing',      tactic:'Credential Access',  color:'#e74c3c' }],
+    [/exploit/i,                    { id:'T1190',     name:'Exploit Public-Facing Application',   tactic:'Initial Access',     color:'#c0392b' }],
+    [/malware|download/i,           { id:'T1105',     name:'Ingress Tool Transfer',              tactic:'Command & Control',  color:'#8e44ad' }],
+    [/command|shell|exec/i,         { id:'T1059',     name:'Command & Scripting Interpreter',    tactic:'Execution',          color:'#e67e22' }],
+    [/login|valid|credential/i,     { id:'T1078',     name:'Valid Accounts',                     tactic:'Initial Access',     color:'#c0392b' }],
+    [/dos|flood|amplif|abuse/i,     { id:'T1498',     name:'Network Denial of Service',          tactic:'Impact',             color:'#d35400' }],
+    [/scan|probe|discovery|recon/i, { id:'T1046',     name:'Network Service Discovery',          tactic:'Discovery',          color:'#27ae60' }],
+  ];
+
+  function mitreInfo(attackType) {
+    if (!attackType) return null;
+    if (MITRE_MAP[attackType]) return MITRE_MAP[attackType];
+    for (const [re, info] of MITRE_FALLBACK) { if (re.test(attackType)) return info; }
+    return null;
+  }
+
   function mitreBadge(attackType) {
-    const m = MITRE_MAP[attackType];
+    const m = mitreInfo(attackType);
     if (!m) return '';
     return `<span title="${m.id} · ${m.name} · Tactic: ${m.tactic}"
       style="display:inline-block;background:rgba(${hexToRgb(m.color)},0.15);
