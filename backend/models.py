@@ -44,7 +44,7 @@ class Session(Base):
     src_ip = Column(String, nullable=False, index=True)
     src_port = Column(Integer, nullable=True)
     dst_port = Column(Integer, nullable=True, default=22)
-    start_time = Column(DateTime, nullable=False)
+    start_time = Column(DateTime, nullable=False, index=True)
     end_time = Column(DateTime, nullable=True)
     duration_secs = Column(Float, nullable=True)
     sensor = Column(String, nullable=True)
@@ -175,7 +175,7 @@ class Event(Base):
     download_path = Column(String, nullable=True)
     duration = Column(Float, nullable=True)
     raw_json = Column(Text, nullable=False)
-    severity = Column(String, default="low")
+    severity = Column(String, default="low", index=True)
     attack_type = Column(String, nullable=True)
     created_at = Column(DateTime, default=func.now())
 

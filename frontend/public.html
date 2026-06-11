@@ -163,11 +163,75 @@
       background: rgba(31,111,235,0.12); border-color: var(--hd-blue2); color: var(--hd-blue3);
     }
 
+    /* ── Hero banner ── */
+    .pub-hero {
+      position: relative;
+      background:
+        radial-gradient(1100px 220px at 12% -50%, rgba(0,200,255,0.10), transparent 60%),
+        var(--hd-surface);
+      border: 1px solid var(--hd-border);
+      border-radius: 10px;
+      padding: 28px 30px;
+      margin-bottom: 22px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 26px;
+      align-items: center;
+      overflow: hidden;
+    }
+    .pub-hero-eyebrow {
+      font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--hd-blue3); display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    }
+    .pub-hero h1 {
+      font-size: clamp(22px, 3.2vw, 33px); font-weight: 800; color: var(--hd-text);
+      line-height: 1.14; margin: 0 0 11px; letter-spacing: -.015em; text-wrap: balance;
+    }
+    .pub-hero p { font-size: 14px; color: var(--hd-text2); max-width: 62ch; line-height: 1.55; margin: 0; }
+    .pub-hero-num { text-align: center; padding-left: 26px; border-left: 1px solid var(--hd-border); }
+    .pub-hero-num .n {
+      font-size: clamp(40px, 6vw, 62px); font-weight: 800; color: var(--hd-text);
+      font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -.02em;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+    }
+    .pub-hero-num .l { font-size: 11px; color: var(--hd-text3); text-transform: uppercase; letter-spacing: .08em; margin-top: 9px; }
+    .pub-hero-mini { display: flex; gap: 26px; margin-top: 18px; }
+    .pub-hero-mini > div { font-size: 11px; color: var(--hd-text3); text-transform: uppercase; letter-spacing: .06em; }
+    .pub-hero-mini b { display: block; font-size: 19px; font-weight: 700; color: var(--hd-text); font-variant-numeric: tabular-nums; margin-top: 2px; letter-spacing: -.01em; }
+
+    /* ── Top countries leaderboard ── */
+    .lb-list { list-style: none; margin: 0; padding: 0; }
+    .lb-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--hd-border); }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank { width: 20px; text-align: center; font-size: 12px; font-weight: 700; color: var(--hd-text3); font-variant-numeric: tabular-nums; }
+    .lb-flag { width: 24px; text-align: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .lb-flagimg { width: 24px; height: 18px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+    .lb-name { flex: 0 0 140px; font-size: 13px; color: var(--hd-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-bar { flex: 1; height: 9px; background: var(--hd-surface2); border-radius: 5px; overflow: hidden; }
+    .lb-fill { height: 100%; background: linear-gradient(90deg, rgba(0,200,255,.55), #00c8ff); border-radius: 5px; box-shadow: 0 0 8px rgba(0,200,255,.35); transition: width .6s ease; }
+    .lb-count { flex: 0 0 auto; min-width: 48px; text-align: right; font-size: 12px; color: var(--hd-text2); font-variant-numeric: tabular-nums; }
+
+    /* ── Explainer cards ── */
+    .explain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .explain-card { background: var(--hd-surface); border: 1px solid var(--hd-border); border-radius: 8px; padding: 20px; }
+    .explain-ico { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: rgba(0,200,255,.12); color: var(--hd-blue3); margin-bottom: 13px; }
+    .explain-card h4 { font-size: 14px; font-weight: 700; color: var(--hd-text); margin: 0 0 7px; }
+    .explain-card p { font-size: 12.5px; color: var(--hd-text2); line-height: 1.55; margin: 0; }
+
+    /* ── MITRE technique badge (public feed) ── */
+    .mitre-badge {
+      display: inline-block; font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px;
+      margin-left: 6px; vertical-align: middle; white-space: nowrap; cursor: help;
+    }
+
     /* responsive grid tweaks */
     @media (max-width: 768px) {
       .public-header { padding: 0 14px; }
       .public-body   { padding: 14px; }
       .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .pub-hero { grid-template-columns: 1fr; padding: 22px; }
+      .pub-hero-num { border-left: none; border-top: 1px solid var(--hd-border); padding-left: 0; padding-top: 18px; text-align: left; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -197,6 +261,25 @@
 
   <!-- ══════════════════ BODY ══════════════════ -->
   <div class="public-body">
+
+    <!-- ── HERO ── -->
+    <section class="pub-hero">
+      <div>
+        <span class="pub-hero-eyebrow"><span class="live-dot"></span> Live Threat Intelligence</span>
+        <h1>Watching real cyber attacks, as they happen.</h1>
+        <p>HoneyDash runs decoy systems (honeypots) that lure attackers from across the internet,
+           then maps where they come from and what they try &mdash; all anonymised for public view.</p>
+        <div class="pub-hero-mini">
+          <div>Unique Sources<b id="heroSources">&mdash;</b></div>
+          <div>Countries<b id="heroCountries">&mdash;</b></div>
+          <div>Flagged by AI<b id="heroAnomalies">&mdash;</b></div>
+        </div>
+      </div>
+      <div class="pub-hero-num">
+        <div class="n" id="heroTotal">&mdash;</div>
+        <div class="l">attacks in the last 24h</div>
+      </div>
+    </section>
 
     <!-- Anonymised notice -->
     <div class="anon-notice">
@@ -284,6 +367,18 @@
       </div>
     </div>
 
+    <!-- ── Top Attacking Countries ── -->
+    <div class="section-title"><i class="fas fa-trophy"></i> Top Attacking Countries</div>
+    <div class="pub-card">
+      <div class="pub-card-title">
+        <i class="fas fa-ranking-star"></i> By session count
+        <span style="font-size:11px;color:#8b949e;margin-left:8px;font-weight:400;text-transform:none;letter-spacing:0">where attacks originate</span>
+      </div>
+      <ul class="lb-list" id="leaderboard">
+        <li class="lb-row" style="justify-content:center;color:#8b949e"><i class="fas fa-spinner fa-spin mr-2"></i> Loading&hellip;</li>
+      </ul>
+    </div>
+
     <!-- ── Recent Activity Feed (anonymised) ── -->
     <div class="section-title"><i class="fas fa-stream"></i> Recent Activity (Anonymised)</div>
     <div class="pub-card">
@@ -296,6 +391,29 @@
           <i class="fas fa-spinner fa-spin mr-2"></i> Loading...
         </li>
       </ul>
+    </div>
+
+    <!-- ── How It Works (explainer) ── -->
+    <div class="section-title"><i class="fas fa-graduation-cap"></i> How It Works</div>
+    <div class="explain-grid">
+      <div class="explain-card">
+        <div class="explain-ico"><i class="fas fa-fish"></i></div>
+        <h4>1 &middot; The Trap</h4>
+        <p>HoneyDash exposes decoy services &mdash; a fake SSH server, web server and database &mdash;
+           that look real to attackers but hold no real data. Every connection to them is an intruder.</p>
+      </div>
+      <div class="explain-card">
+        <div class="explain-ico"><i class="fas fa-satellite-dish"></i></div>
+        <h4>2 &middot; The Capture</h4>
+        <p>When attackers probe, log in, or run commands, every move is recorded: the country they came
+           from, the protocol they targeted, and the credentials they tried.</p>
+      </div>
+      <div class="explain-card">
+        <div class="explain-ico"><i class="fas fa-brain"></i></div>
+        <h4>3 &middot; The Intelligence</h4>
+        <p>Each attack is enriched with geolocation, scored for severity, and screened by a machine-learning
+           model that flags unusual behaviour &mdash; turning raw noise into clear insight.</p>
+      </div>
     </div>
 
     <!-- ── Footer ── -->
@@ -337,6 +455,64 @@
 
     const CYAN  = 'rgba(0,200,255,0.8)';
     const CYAN_FILL = 'rgba(0,200,255,0.1)';
+
+    // ── Animated count-up (respects reduced motion) ──
+    const REDUCE_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function countUp(el, target) {
+      if (!el) return;
+      target = Number(target) || 0;
+      if (REDUCE_MOTION) { el.textContent = target.toLocaleString(); return; }
+      const start = Number((el.textContent || '0').replace(/[^0-9.-]/g, '')) || 0;
+      if (start === target) { el.textContent = target.toLocaleString(); return; }
+      const dur = 700, t0 = performance.now();
+      (function step(now) {
+        const p = Math.min((now - t0) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(start + (target - start) * eased).toLocaleString();
+        if (p < 1) requestAnimationFrame(step);
+      })(t0);
+    }
+
+    // ── MITRE ATT&CK badges for the anonymised feed ──
+    const MITRE_MAP = {
+      'SSH Brute Force':         { id:'T1110.001', name:'Brute Force: Password Guessing',     tactic:'Credential Access', color:'#e74c3c' },
+      'SSH Login':               { id:'T1078',     name:'Valid Accounts',                      tactic:'Initial Access',    color:'#c0392b' },
+      'Command Execution':       { id:'T1059',     name:'Command & Scripting Interpreter',     tactic:'Execution',         color:'#e67e22' },
+      'Malware Download':        { id:'T1105',     name:'Ingress Tool Transfer',               tactic:'Command & Control', color:'#8e44ad' },
+      'SSH Connect':             { id:'T1021.004', name:'Remote Services: SSH',                tactic:'Lateral Movement',  color:'#2980b9' },
+      'HTTP Exploit':            { id:'T1190',     name:'Exploit Public-Facing Application',   tactic:'Initial Access',    color:'#c0392b' },
+      'HTTPS Exploit':           { id:'T1190',     name:'Exploit Public-Facing Application',   tactic:'Initial Access',    color:'#c0392b' },
+      'SMB/EternalBlue Exploit': { id:'T1210',     name:'Exploitation of Remote Services',     tactic:'Lateral Movement',  color:'#e74c3c' },
+      'FTP Brute Force':         { id:'T1110.001', name:'Brute Force: Password Guessing',     tactic:'Credential Access', color:'#e74c3c' },
+      'MySQL Brute Force':       { id:'T1110.001', name:'Brute Force: Password Guessing',     tactic:'Credential Access', color:'#e74c3c' },
+      'MSSQL Brute Force':       { id:'T1110.001', name:'Brute Force: Password Guessing',     tactic:'Credential Access', color:'#e74c3c' },
+      'SIP Scanning':            { id:'T1046',     name:'Network Service Discovery',           tactic:'Discovery',         color:'#27ae60' },
+      'Telnet Attack':           { id:'T1021.005', name:'Remote Services: VNC',               tactic:'Lateral Movement',  color:'#2980b9' },
+      'Memcached Abuse':         { id:'T1498.002', name:'Reflection Amplification',            tactic:'Impact',            color:'#d35400' },
+      'Elasticsearch Probe':     { id:'T1190',     name:'Exploit Public-Facing Application',   tactic:'Initial Access',    color:'#c0392b' },
+      'PPTP VPN Probe':          { id:'T1046',     name:'Network Service Discovery',           tactic:'Discovery',         color:'#27ae60' },
+    };
+    const MITRE_FALLBACK = [
+      [/brute/i,                      MITRE_MAP['SSH Brute Force']],
+      [/exploit/i,                    MITRE_MAP['HTTP Exploit']],
+      [/malware|download/i,           MITRE_MAP['Malware Download']],
+      [/command|shell|exec/i,         MITRE_MAP['Command Execution']],
+      [/login|valid|credential/i,     MITRE_MAP['SSH Login']],
+      [/dos|flood|amplif|abuse/i,     { id:'T1498', name:'Network Denial of Service', tactic:'Impact', color:'#d35400' }],
+      [/scan|probe|discovery|recon/i, MITRE_MAP['SIP Scanning']],
+    ];
+    function mitreInfo(t) {
+      if (!t) return null;
+      if (MITRE_MAP[t]) return MITRE_MAP[t];
+      for (const [re, info] of MITRE_FALLBACK) { if (re.test(t)) return info; }
+      return null;
+    }
+    function mitreBadge(t) {
+      const m = mitreInfo(t);
+      if (!m) return '';
+      const r = parseInt(m.color.slice(1,3),16), g = parseInt(m.color.slice(3,5),16), b = parseInt(m.color.slice(5,7),16);
+      return `<span class="mitre-badge" title="${m.id} · ${m.name} — Tactic: ${m.tactic}" style="background:rgba(${r},${g},${b},.14);color:${m.color};border:1px solid rgba(${r},${g},${b},.4)">${m.id}</span>`;
+    }
 
     // ── Map ──
     let pubMap = null;
@@ -460,12 +636,17 @@
     // ── Stats ──
     function loadStats() {
       apiFetch('/api/public/stats').then(d => {
-        document.getElementById('pubTotalAttacks').textContent  = d.total_attacks_24h.toLocaleString();
-        document.getElementById('pubUniqueSources').textContent = d.unique_sources_24h.toLocaleString();
-        document.getElementById('pubHighSev').textContent       = d.high_severity_24h.toLocaleString();
-        document.getElementById('pubTotalSessions').textContent = d.total_sessions.toLocaleString();
-        document.getElementById('pubCountries').textContent     = d.countries_seen.toLocaleString();
-        document.getElementById('pubAnomalies').textContent     = d.ml_anomalies.toLocaleString();
+        countUp(document.getElementById('pubTotalAttacks'),  d.total_attacks_24h);
+        countUp(document.getElementById('pubUniqueSources'), d.unique_sources_24h);
+        countUp(document.getElementById('pubHighSev'),       d.high_severity_24h);
+        countUp(document.getElementById('pubTotalSessions'), d.total_sessions);
+        countUp(document.getElementById('pubCountries'),     d.countries_seen);
+        countUp(document.getElementById('pubAnomalies'),     d.ml_anomalies);
+        // Hero headline figures
+        countUp(document.getElementById('heroTotal'),     d.total_attacks_24h);
+        countUp(document.getElementById('heroSources'),   d.unique_sources_24h);
+        countUp(document.getElementById('heroCountries'), d.countries_seen);
+        countUp(document.getElementById('heroAnomalies'), d.ml_anomalies);
       }).catch(() => {});
     }
 
@@ -508,11 +689,45 @@
             <li class="activity-item">
               <div class="activity-icon ${sev}"><i class="fas ${icon}"></i></div>
               <div class="activity-meta">
-                <div class="activity-type">${ev.attack_type || 'Unknown'}<span class="badge-${sev} ml-2">${sev}</span></div>
+                <div class="activity-type">${ev.attack_type || 'Unknown'}<span class="badge-${sev} ml-2">${sev}</span>${mitreBadge(ev.attack_type)}</div>
                 <div class="activity-detail">${flag}${loc || 'Unknown'}${port}</div>
               </div>
               <div class="activity-time">${ev.timestamp ? timeAgo(ev.timestamp) : ''}</div>
             </li>`;
+        }).join('');
+      }).catch(() => {});
+    }
+
+    // ── Top countries leaderboard (aggregated from anonymised map data) ──
+    function loadTopCountries() {
+      apiFetch('/api/public/map').then(d => {
+        const agg = {};
+        (d.markers || []).forEach(m => {
+          const key = m.country || 'Unknown';
+          if (!agg[key]) agg[key] = { country: key, code: m.country_code || '', count: 0 };
+          agg[key].count += m.count || 0;
+        });
+        const list = Object.values(agg).sort((a, b) => b.count - a.count).slice(0, 8);
+        const el = document.getElementById('leaderboard');
+        if (!el) return;
+        if (!list.length) {
+          el.innerHTML = '<li class="lb-row" style="justify-content:center;color:#8b949e">No data yet</li>';
+          return;
+        }
+        const max = list[0].count || 1;
+        el.innerHTML = list.map((c, i) => {
+          const cc = (c.code || '').toLowerCase();
+          const flag = cc
+            ? `<img class="lb-flagimg" src="https://flagcdn.com/32x24/${cc}.png" alt="${c.code}" loading="lazy" onerror="this.replaceWith(document.createTextNode('\u{1F3F3}\u{FE0F}'))">`
+            : '\u{1F3F3}\u{FE0F}';
+          return `
+          <li class="lb-row">
+            <span class="lb-rank">${i + 1}</span>
+            <span class="lb-flag">${flag}</span>
+            <span class="lb-name">${c.country}</span>
+            <span class="lb-bar"><span class="lb-fill" style="width:${Math.round(c.count / max * 100)}%"></span></span>
+            <span class="lb-count">${c.count.toLocaleString()}</span>
+          </li>`;
         }).join('');
       }).catch(() => {});
     }
@@ -540,6 +755,7 @@
     loadMap();
     loadHourly();
     loadActivity();
+    loadTopCountries();
 
     // Refresh every 60 s
     setInterval(() => {
@@ -547,6 +763,7 @@
       loadAttackTypes();
       loadHourly();
       loadActivity();
+      loadTopCountries();
     }, 60000);
 
     // Map refreshes every 5 min
