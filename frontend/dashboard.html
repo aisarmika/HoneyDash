@@ -1241,14 +1241,21 @@
       el.style.display = show ? '' : 'none';
     });
 
-    // Refresh all data with new sensor filter
+    // Refresh data — KPIs first for instant feedback, then only the panels
+    // relevant to the selected sensor (skips wasted calls for hidden panels).
     apiFetch(sensorParamFor('/api/dashboard/stats')).then(updateStatsBoxes).catch(()=>{});
+    const showCred = visible.includes('credential');
     loadTimelineData($('#timeRange').val());
     loadAttackTypes(); loadSeverityTrend(); loadProtocolStats();
-    loadHourlyData(); loadTopPorts(); loadTopAttackers(); loadTopCredentials();
-    loadMalwareFeed(); loadUniqueAttackers(); loadLoginBreakdown();
-    loadCowrieDeep(); loadDionaeaDeep(); loadRemoteDeep(); loadGeographicIntel(); loadCredentialAnalysis(); loadNetworkIntel();
+    loadHourlyData(); loadTopPorts(); loadTopAttackers(); loadUniqueAttackers();
+    loadGeographicIntel(); loadNetworkIntel();
     loadMapData(); loadHeatmap(); loadMlStats(); loadRecentEvents(); loadHighSeverityNotifs();
+    // Credential panels only when that workspace is visible
+    if (showCred) { loadTopCredentials(); loadLoginBreakdown(); loadCredentialAnalysis(); }
+    // Sensor-specific deep-dive panels only for the matching sensor (these are the heaviest queries)
+    if (sensor === '' || sensor === 'cowrie-01')  loadCowrieDeep();
+    if (sensor === '' || sensor === 'dionaea-01') { loadDionaeaDeep(); loadMalwareFeed(); }
+    if (sensor === '' || sensor === 'remote')     loadRemoteDeep();
   }
 
   // ═══════════════════════ TOAST ═══════════════════════════════════════════
