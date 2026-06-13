@@ -234,6 +234,35 @@
       .pub-hero-num { border-left: none; border-top: 1px solid var(--hd-border); padding-left: 0; padding-top: 18px; text-align: left; }
     }
 
+    /* ── 3D Attack Globe ── */
+    .globe-card { position: relative; padding: 0; overflow: hidden; }
+    #public-globe { width: 100%; height: 460px; background: #040d1a; border-radius: 6px; }
+    .globe-badge {
+      position: absolute; top: 12px; left: 12px; z-index: 5;
+      background: rgba(220,53,69,0.14); border: 1px solid rgba(220,53,69,0.4);
+      border-radius: 20px; padding: 3px 11px; font-size: 11px; font-weight: 700;
+      color: #ff6b6b; letter-spacing: .6px; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .globe-badge .d { width: 7px; height: 7px; background: #ff6b6b; border-radius: 50%; animation: pulse 1.2s ease-in-out infinite; }
+    .globe-controls { position: absolute; top: 12px; right: 12px; z-index: 5; display: flex; gap: 6px; }
+    .globe-btn {
+      background: rgba(4,13,26,0.8); border: 1px solid var(--hd-border2); color: var(--hd-text2);
+      border-radius: 5px; padding: 4px 10px; font-size: 11px; cursor: pointer; transition: all .15s;
+    }
+    .globe-btn:hover, .globe-btn.active { background: rgba(0,200,255,.15); border-color: rgba(0,200,255,.4); color: #00c8ff; }
+    .globe-overlay-arcs {
+      position: absolute; bottom: 14px; right: 14px; z-index: 5;
+      background: rgba(4,13,26,0.82); border: 1px solid rgba(0,200,255,0.25);
+      border-radius: 8px; padding: 8px 14px; text-align: center; pointer-events: none;
+    }
+    .globe-overlay-arcs .n { display: block; font-size: 22px; font-weight: 800; color: #00c8ff; line-height: 1; font-variant-numeric: tabular-nums; }
+    .globe-overlay-arcs .l { font-size: 9px; color: #4a7c99; text-transform: uppercase; letter-spacing: .5px; }
+    .globe-feed { position: absolute; bottom: 14px; left: 14px; z-index: 5; max-width: 280px; pointer-events: none; }
+    .globe-feed .gf { display: flex; align-items: center; gap: 7px; padding: 2px 0; font-size: 11px; color: #8aa8c0; animation: gfIn .3s ease; }
+    .globe-feed .gfd { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    @keyframes gfIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+    @media (max-width: 768px) { #public-globe { height: 340px; } .globe-feed { display: none; } }
+
     @media (prefers-reduced-motion: reduce) {
       .live-dot { animation: none; }
     }
@@ -324,6 +353,19 @@
         <div class="stat-value" id="pubAnomalies">—</div>
         <div class="stat-sub">flagged by AI</div>
       </div>
+    </div>
+
+    <!-- ── 3D ATTACK GLOBE ── -->
+    <div class="section-title"><i class="fas fa-globe-asia"></i> Live Attack Globe</div>
+    <div class="pub-card globe-card">
+      <div id="public-globe"></div>
+      <span class="globe-badge"><span class="d"></span> LIVE</span>
+      <div class="globe-controls">
+        <button class="globe-btn active" id="gBtnRotate" onclick="pubToggleRotate()"><i class="fas fa-sync-alt mr-1"></i>Auto-rotate</button>
+        <button class="globe-btn" onclick="pubResetView()"><i class="fas fa-compress-arrows-alt mr-1"></i>Reset</button>
+      </div>
+      <div class="globe-overlay-arcs"><span class="n" id="gArcs">0</span><span class="l">Attacks Shown</span></div>
+      <div class="globe-feed" id="gFeed"></div>
     </div>
 
     <!-- ── ROW: Timeline + Attack Types ── -->
@@ -436,6 +478,7 @@
   <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="plugins/chart.js/Chart.min.js"></script>
+  <script src="https://unpkg.com/globe.gl"></script>
   <script src="config.js"></script>
 
   <script>
@@ -732,6 +775,101 @@
       }).catch(() => {});
     }
 
+    // ── 3D Attack Globe ──
+    const G_LAT = 6.1, G_LNG = 100.4;  // honeypot location (UUM, Malaysia)
+    let gGlobe = null, gArcs = [], gRings = [], gArcCount = 0, gAutoRotate = true, gMarkers = [];
+    const G_HOME = [{ lat: G_LAT, lng: G_LNG, size: 0.6, color: '#00ff88', label: '\u{1F3E0} Honeypot — Malaysia' }];
+    const G_COL = {
+      high:   ['rgba(255,68,68,0.95)', 'rgba(255,180,180,0.45)'],
+      medium: ['rgba(255,153,0,0.95)', 'rgba(255,210,120,0.45)'],
+      low:    ['rgba(0,200,255,0.95)', 'rgba(140,220,255,0.45)'],
+    };
+    const G_ALT = { high: 0.45, medium: 0.35, low: 0.25 };
+    const G_DOT = { high: '#ff4444', medium: '#ff9900', low: '#00ccff' };
+
+    function initGlobe() {
+      if (!window.Globe) return;
+      const el = document.getElementById('public-globe');
+      if (!el) return;
+      gGlobe = Globe({ animateIn: true })(el)
+        .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+        .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+        .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+        .atmosphereColor('#00c8ff').atmosphereAltitude(0.2)
+        .pointsData(G_HOME).pointColor('color').pointAltitude(0.01).pointRadius('size').pointLabel('label')
+        .arcsData([]).arcColor('color').arcAltitude(d => d.alt || 0.35).arcStroke(0.7)
+        .arcDashLength(0.38).arcDashGap(1.6).arcDashAnimateTime(1800).arcLabel(d => d.tip || '')
+        .ringsData([]).ringColor(d => d.color).ringMaxRadius(4).ringPropagationSpeed(2.2).ringRepeatPeriod(800);
+      gGlobe.controls().autoRotate = true;
+      gGlobe.controls().autoRotateSpeed = 0.45;
+      gGlobe.controls().enableDamping = true;
+      gGlobe.pointOfView({ lat: 20, lng: 60, altitude: 2.6 }, 0);
+      const resize = () => { gGlobe.width(el.offsetWidth); gGlobe.height(el.offsetHeight); };
+      window.addEventListener('resize', resize); resize();
+      setInterval(pulseHome, 2500); pulseHome();
+    }
+
+    function pulseHome() {
+      if (!gGlobe) return;
+      const r = { lat: G_LAT, lng: G_LNG, color: t => `rgba(0,255,136,${Math.max(0, 1 - t * 1.6)})` };
+      gRings = [...gRings, r]; gGlobe.ringsData(gRings);
+      setTimeout(() => { gRings = gRings.filter(x => x !== r); gGlobe.ringsData(gRings); }, 1800);
+    }
+
+    function fireArc(lat, lng, sev, label) {
+      if (!gGlobe) return;
+      sev = G_COL[sev] ? sev : 'low';
+      gArcCount++; const ac = document.getElementById('gArcs'); if (ac) ac.textContent = gArcCount.toLocaleString();
+      const arc = { startLat: lat, startLng: lng, endLat: G_LAT, endLng: G_LNG, color: G_COL[sev], alt: G_ALT[sev], tip: label || '' };
+      const ring = { lat, lng, color: t => { const b = sev === 'high' ? '255,68,68' : sev === 'medium' ? '255,153,0' : '0,200,255'; return `rgba(${b},${Math.max(0, 1 - t * 1.8)})`; } };
+      gRings = [...gRings, ring]; gGlobe.ringsData(gRings);
+      setTimeout(() => { gRings = gRings.filter(x => x !== ring); gGlobe.ringsData(gRings); }, 1800);
+      gArcs = [...gArcs, arc]; gGlobe.arcsData(gArcs);
+      setTimeout(() => { gArcs = gArcs.filter(a => a !== arc); gGlobe.arcsData(gArcs); }, 3500);
+      const feed = document.getElementById('gFeed');
+      if (feed) {
+        const d = document.createElement('div'); d.className = 'gf';
+        d.innerHTML = `<span class="gfd" style="background:${G_DOT[sev]}"></span>${String(label || 'Attack').replace(/[<>&]/g, '')}`;
+        feed.insertBefore(d, feed.firstChild);
+        while (feed.children.length > 7) feed.removeChild(feed.lastChild);
+      }
+    }
+
+    function loadGlobe() {
+      apiFetch('/api/public/map').then(d => {
+        if (!gGlobe || !d.markers) return;
+        gMarkers = d.markers.filter(m => m.lat != null && m.lng != null);
+        const pts = gMarkers.map(m => ({
+          lat: m.lat, lng: m.lng,
+          size: Math.max(0.16, Math.min(0.6, Math.sqrt(m.count) * 0.08)),
+          color: '#ff4444',
+          label: `\u{1F534} ${m.country || '?'} · ${m.count.toLocaleString()} attacks`,
+        }));
+        gGlobe.pointsData([...G_HOME, ...pts]);
+        // opening burst of arcs
+        const sevs = ['high', 'high', 'medium', 'medium', 'low', 'low', 'low', 'low'];
+        gMarkers.slice(0, 8).forEach((m, i) => setTimeout(() => fireArc(m.lat, m.lng, sevs[i] || 'low', `${m.country || '?'} → Honeypot`), i * 420));
+      }).catch(() => {});
+    }
+
+    // Timer-driven "live" arcs from weighted-random markers (busier countries fire more)
+    function liveArcTick() {
+      if (!gMarkers.length || !gGlobe) return;
+      const total = gMarkers.reduce((s, m) => s + (m.count || 1), 0);
+      let r = Math.random() * total, m = gMarkers[0];
+      for (const mk of gMarkers) { r -= (mk.count || 1); if (r <= 0) { m = mk; break; } }
+      const sev = m.count > 500 ? 'high' : m.count > 100 ? 'medium' : 'low';
+      fireArc(m.lat, m.lng, sev, `${m.country || '?'} → Honeypot`);
+    }
+
+    function pubToggleRotate() {
+      gAutoRotate = !gAutoRotate; gGlobe.controls().autoRotate = gAutoRotate;
+      const b = document.getElementById('gBtnRotate');
+      b.classList.toggle('active', gAutoRotate);
+      b.innerHTML = `<i class="fas fa-sync-alt mr-1"></i>${gAutoRotate ? 'Auto-rotate' : 'Paused'}`;
+    }
+    function pubResetView() { if (gGlobe) gGlobe.pointOfView({ lat: 20, lng: 60, altitude: 2.6 }, 1000); }
+
     // ── Range buttons ──
     document.getElementById('rangeGroup').addEventListener('click', e => {
       const btn = e.target.closest('.range-btn');
@@ -749,10 +887,13 @@
       initHourlyChart();
     }
 
+    initGlobe();
+
     loadStats();
     loadTimeline('7d');
     loadAttackTypes();
     loadMap();
+    loadGlobe();
     loadHourly();
     loadActivity();
     loadTopCountries();
@@ -766,8 +907,12 @@
       loadTopCountries();
     }, 60000);
 
-    // Map refreshes every 5 min
+    // "Live" attack arcs on the globe
+    setInterval(liveArcTick, 1800);
+
+    // Map + globe markers refresh every 5 min
     setInterval(loadMap, 300000);
+    setInterval(loadGlobe, 300000);
   </script>
 
 </body>
