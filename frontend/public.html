@@ -263,6 +263,29 @@
     @keyframes gfIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
     @media (max-width: 768px) { #public-globe { height: 340px; } .globe-feed { display: none; } }
 
+    /* ── Cyber Awareness (educational) ── */
+    .aware-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 768px) { .aware-grid { grid-template-columns: 1fr; } }
+    .aware-card { background: var(--hd-surface); border: 1px solid var(--hd-border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; }
+    .aware-card h4 { font-size: 13px; font-weight: 800; color: var(--hd-text); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+    .aware-card h4 i { color: #00c8ff; }
+    .fact-text { font-size: 15px; color: var(--hd-text); line-height: 1.6; min-height: 72px; transition: opacity .35s; }
+    .fact-text b { color: #00c8ff; }
+    .fact-dots { display: flex; gap: 5px; margin-top: 14px; }
+    .fact-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hd-border2); transition: background .3s; }
+    .fact-dot.on { background: #00c8ff; }
+    .quiz-pw { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 19px; color: var(--hd-text); background: var(--hd-bg); border: 1px solid var(--hd-border2); border-radius: 6px; padding: 14px; text-align: center; letter-spacing: 1px; word-break: break-all; margin-bottom: 14px; }
+    .quiz-btns { display: flex; gap: 10px; }
+    .quiz-btn { flex: 1; padding: 9px; border-radius: 6px; border: 1px solid var(--hd-border2); background: var(--hd-surface2); color: var(--hd-text); font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; }
+    .quiz-btn:hover { border-color: #00c8ff; color: #00c8ff; }
+    .quiz-btn.weak:hover { border-color: #ff6b6b; color: #ff6b6b; }
+    .quiz-result { margin-top: 13px; font-size: 12.5px; line-height: 1.5; min-height: 40px; color: var(--hd-text2); }
+    .quiz-result b { color: var(--hd-text); }
+    .quiz-result .ok { color: #3fb950; font-weight: 700; }
+    .quiz-result .no { color: #ff6b6b; font-weight: 700; }
+    .quiz-next { margin-top: 8px; background: rgba(0,200,255,.12); border: 1px solid rgba(0,200,255,.4); color: #00c8ff; border-radius: 6px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer; align-self: flex-start; }
+    .quiz-score { margin-left: auto; font-size: 11px; color: var(--hd-text3); font-weight: 400; text-transform: none; letter-spacing: 0; }
+
     @media (prefers-reduced-motion: reduce) {
       .live-dot { animation: none; }
     }
@@ -455,6 +478,27 @@
         <h4>3 &middot; The Intelligence</h4>
         <p>Each attack is enriched with geolocation, scored for severity, and screened by a machine-learning
            model that flags unusual behaviour &mdash; turning raw noise into clear insight.</p>
+      </div>
+    </div>
+
+    <!-- ── Cyber Awareness (educational) ── -->
+    <div class="section-title"><i class="fas fa-user-shield"></i> Cyber Awareness</div>
+    <div class="aware-grid">
+      <div class="aware-card">
+        <h4><i class="fas fa-lightbulb"></i> Did You Know?</h4>
+        <div class="fact-text" id="factText">&mdash;</div>
+        <div class="fact-dots" id="factDots"></div>
+      </div>
+      <div class="aware-card">
+        <h4><i class="fas fa-user-lock"></i> Spot the Strong Password
+          <span class="quiz-score" id="quizScore">Score: 0 / 0</span></h4>
+        <div class="quiz-pw" id="quizPw">&mdash;</div>
+        <div class="quiz-btns" id="quizBtns">
+          <button class="quiz-btn weak" onclick="quizAnswer(false)">Weak</button>
+          <button class="quiz-btn" onclick="quizAnswer(true)">Strong</button>
+        </div>
+        <div class="quiz-result" id="quizResult"></div>
+        <button class="quiz-next" id="quizNext" style="display:none" onclick="quizNext()">Next password &rarr;</button>
       </div>
     </div>
 
@@ -870,6 +914,64 @@
     }
     function pubResetView() { if (gGlobe) gGlobe.pointOfView({ lat: 20, lng: 60, altitude: 2.6 }, 1000); }
 
+    // ── Cyber Awareness: rotating facts ──
+    const CYBER_FACTS = [
+      'Over <b>80%</b> of hacking breaches involve weak or stolen passwords.',
+      'The most common password attackers try is still <b>&ldquo;123456&rdquo;</b>.',
+      'A honeypot has <b>no real users</b> &mdash; so every single connection to it is an attacker.',
+      'Automated bots scan the <b>entire internet</b> for exposed servers in under an hour.',
+      'Multi-factor authentication blocks over <b>99%</b> of automated account-takeover attacks.',
+      'Brute-force tools try <b>thousands of passwords per second</b> &mdash; short passwords fall in seconds.',
+      'Most attacks shown here are <b>automated bots</b>, not humans &mdash; they never sleep.',
+      'Reusing one password means <b>one leak</b> can unlock all of your accounts.',
+    ];
+    let factIdx = 0;
+    function renderFact() {
+      const t = document.getElementById('factText'), dots = document.getElementById('factDots');
+      if (!t) return;
+      t.style.opacity = 0;
+      setTimeout(() => { t.innerHTML = CYBER_FACTS[factIdx]; t.style.opacity = 1; }, 250);
+      dots.innerHTML = CYBER_FACTS.map((_, i) => `<span class="fact-dot${i === factIdx ? ' on' : ''}"></span>`).join('');
+    }
+    function rotateFact() { factIdx = (factIdx + 1) % CYBER_FACTS.length; renderFact(); }
+
+    // ── Cyber Awareness: password micro-quiz ──
+    const PW_QUIZ = [
+      { pw: '123456', strong: false, why: 'One of the most-guessed passwords in the world &mdash; cracked instantly.' },
+      { pw: 'correct-horse-battery-staple', strong: true, why: 'A long passphrase: hard to brute-force, easy to remember.' },
+      { pw: 'admin', strong: false, why: 'A default credential attackers always try first.' },
+      { pw: '7$kP!2vQxZ9m', strong: true, why: 'Long, random, and mixes character types &mdash; very hard to crack.' },
+      { pw: 'qwerty', strong: false, why: 'Keyboard patterns are in every cracking dictionary.' },
+      { pw: 'My2Cats!Run@6am', strong: true, why: 'Long, and mixes words, numbers and symbols unpredictably.' },
+      { pw: 'password1', strong: false, why: 'Adding a &ldquo;1&rdquo; to a common word fools no attacker.' },
+      { pw: 'letmein', strong: false, why: 'A classic dictionary password &mdash; instantly guessed.' },
+    ];
+    let quizScore = 0, quizDone = 0, quizOrder = [], quizPos = 0;
+    function quizShuffle() { quizOrder = PW_QUIZ.map((_, i) => i).sort(() => Math.random() - 0.5); quizPos = 0; }
+    function quizRender() {
+      const item = PW_QUIZ[quizOrder[quizPos]];
+      document.getElementById('quizPw').textContent = item.pw;
+      document.getElementById('quizResult').innerHTML = '';
+      document.getElementById('quizBtns').style.display = 'flex';
+      document.getElementById('quizNext').style.display = 'none';
+    }
+    function quizAnswer(saidStrong) {
+      const item = PW_QUIZ[quizOrder[quizPos]];
+      const correct = saidStrong === item.strong;
+      quizDone++; if (correct) quizScore++;
+      document.getElementById('quizScore').textContent = `Score: ${quizScore} / ${quizDone}`;
+      document.getElementById('quizResult').innerHTML =
+        `<span class="${correct ? 'ok' : 'no'}">${correct ? 'Correct!' : 'Not quite.'}</span> ` +
+        `This password is <b>${item.strong ? 'strong' : 'weak'}</b>. ${item.why}`;
+      document.getElementById('quizBtns').style.display = 'none';
+      document.getElementById('quizNext').style.display = '';
+    }
+    function quizNext() {
+      quizPos++;
+      if (quizPos >= quizOrder.length) quizShuffle();
+      quizRender();
+    }
+
     // ── Range buttons ──
     document.getElementById('rangeGroup').addEventListener('click', e => {
       const btn = e.target.closest('.range-btn');
@@ -897,6 +999,12 @@
     loadHourly();
     loadActivity();
     loadTopCountries();
+
+    // Cyber awareness widgets
+    renderFact();
+    setInterval(rotateFact, 6000);
+    quizShuffle();
+    quizRender();
 
     // Refresh every 60 s
     setInterval(() => {
