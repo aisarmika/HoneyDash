@@ -23,6 +23,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 
+from ..config import settings
 from ..database import AsyncSessionLocal
 from ..models import Event, MalwareSample, Session
 from .enrichment import enqueue as enrich_enqueue
@@ -325,6 +326,7 @@ async def start_dionaea_collector() -> None:
     sensor = "dionaea-01"
     last_conn_id = 0
     last_dl_id = 0
+    initialized = False
 
     while True:
         db_path = _resolve_db()
@@ -340,6 +342,36 @@ async def start_dionaea_collector() -> None:
                 db.row_factory = aiosqlite.Row
                 # Enable WAL so Dionaea writes don't block our reads
                 await db.execute("PRAGMA journal_mode=WAL")
+
+                # ── Cold-start watermark ──────────────────────────────────────
+                # Dionaea keeps its own SQLite independent of our PostgreSQL.
+                # Unless catch-up is explicitly enabled, set the watermark to the
+                # CURRENT max IDs on first poll so a backend restart processes
+                # only NEW captures and never re-ingests the entire history
+                # (which would otherwise replay old floods with stale timestamps).
+                if not initialized:
+                    initialized = True
+                    if not settings.log_catchup_on_start:
+                        try:
+                            async with db.execute(
+                                "SELECT COALESCE(MAX(connection), 0) AS m FROM connections"
+                            ) as cur:
+                                last_conn_id = (await cur.fetchone())["m"] or 0
+                        except Exception:
+                            pass
+                        try:
+                            async with db.execute(
+                                "SELECT COALESCE(MAX(download), 0) AS m FROM downloads"
+                            ) as cur:
+                                last_dl_id = (await cur.fetchone())["m"] or 0
+                        except Exception:
+                            pass
+                        logger.info(
+                            "[dionaea] cold start — skipping history (conn>%s, dl>%s)",
+                            last_conn_id, last_dl_id,
+                        )
+                        await asyncio.sleep(POLL_INTERVAL)
+                        continue
 
                 # ── Process new connections ───────────────────────────────────
                 # logins FK is `connection` (not login_connection)
