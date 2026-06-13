@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import (
     Boolean, Column, DateTime, Float, ForeignKey,
-    Integer, String, Text, UniqueConstraint, func,
+    Index, Integer, String, Text, UniqueConstraint, func, text,
 )
 from sqlalchemy.orm import relationship
 
@@ -59,6 +59,14 @@ class Session(Base):
     anomaly_score = Column(Float, nullable=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        # Composite index: fast per-sensor dashboard filtering (sensor + time window)
+        Index("ix_sessions_sensor_start", "sensor", "start_time"),
+        # Partial indexes: instant per-sensor KPI counts (anomalies, active sessions)
+        Index("ix_sessions_anomaly", "sensor", postgresql_where=text("is_anomaly")),
+        Index("ix_sessions_active", "sensor", postgresql_where=text("end_time IS NULL")),
+    )
 
     events = relationship("Event", back_populates="session", lazy="select")
 
@@ -181,6 +189,8 @@ class Event(Base):
 
     __table_args__ = (
         UniqueConstraint("session_id", "event_id", "timestamp", name="uq_event_dedup"),
+        # Composite index: fast per-sensor dashboard filtering (sensor + time window)
+        Index("ix_events_sensor_ts", "sensor", "timestamp"),
     )
 
     session = relationship("Session", back_populates="events")

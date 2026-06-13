@@ -671,12 +671,13 @@ async def unique_attackers(
 ):
     """Return unique attacker IPs per day for the last 14 days."""
     try:
+        sensor_clause = "AND sensor = :sensor" if sensor else ""
         sql = text(
-            """
+            f"""
             SELECT DATE(timestamp) AS day, COUNT(DISTINCT src_ip) AS cnt
             FROM events
             WHERE timestamp >= NOW() - INTERVAL '14 days'
-              AND (:sensor = '' OR sensor = :sensor)
+              {sensor_clause}
             GROUP BY day
             ORDER BY day
             """
@@ -1137,7 +1138,8 @@ async def get_geographic_intel(
 ):
     """Country-level attack intelligence for the geographic intelligence card."""
     try:
-        result = await db.execute(text("""
+        sensor_clause = "AND e.sensor = :sensor" if sensor else ""
+        result = await db.execute(text(f"""
             WITH country_events AS (
               SELECT
                 COALESCE(ie.country, 'Unknown') AS country,
@@ -1150,7 +1152,7 @@ async def get_geographic_intel(
               JOIN ip_enrichments ie ON ie.ip_address = e.src_ip
               WHERE e.timestamp >= NOW() - INTERVAL '7 days'
                 AND ie.country IS NOT NULL
-                AND (:sensor = '' OR e.sensor = :sensor)
+                {sensor_clause}
             ),
             country_totals AS (
               SELECT
@@ -1364,7 +1366,7 @@ async def get_repeat_attackers(
 ):
     """IPs that attacked on multiple different calendar days (persistent threats)."""
     try:
-        sensor_clause = "AND (:sensor = '' OR e.sensor = :sensor)"
+        sensor_clause = "AND e.sensor = :sensor" if sensor else ""
         result = await db.execute(text(f"""
             SELECT e.src_ip,
                    COUNT(DISTINCT DATE(e.timestamp)) AS days_active,
@@ -1376,7 +1378,7 @@ async def get_repeat_attackers(
                    MAX(e.severity) AS max_severity
             FROM events e
             LEFT JOIN ip_enrichments ie ON ie.ip_address = e.src_ip
-            WHERE 1=1 {sensor_clause}
+            WHERE e.timestamp >= NOW() - INTERVAL '30 days' {sensor_clause}
             GROUP BY e.src_ip
             HAVING COUNT(DISTINCT DATE(e.timestamp)) >= 2
             ORDER BY days_active DESC, total_events DESC
@@ -1411,7 +1413,7 @@ async def get_credential_analysis(
     """Password pattern analysis and credential stats."""
     try:
         cutoff = _now_utc() - timedelta(days=30)
-        sensor_clause = "AND (:sensor = '' OR sensor = :sensor)"
+        sensor_clause = "AND sensor = :sensor" if sensor else ""
         params = {"cutoff": cutoff, "sensor": sensor}
 
         # Top 15 username+password combos
