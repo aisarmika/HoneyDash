@@ -940,6 +940,33 @@
                       <div class="mt-2 text-center"><small class="text-muted" id="mlSummaryText">—</small></div>
                     </div>
                   </div>
+
+                  <hr style="border-color:rgba(124,58,237,.2);margin:14px 0 16px">
+                  <div class="row">
+                    <div class="col-lg-5">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-circle-info mr-1"></i>How the AI works</h6>
+                      <p style="font-size:12.5px;color:var(--hd-text2);line-height:1.65">
+                        An <strong style="color:#a78bfa">Isolation Forest</strong> model (scikit-learn) learns what normal
+                        attacker sessions look like across <strong style="color:var(--hd-text)">six behavioural features</strong>,
+                        then isolates the most unusual <strong style="color:#a78bfa">~5%</strong> as anomalies &mdash; no manual
+                        rules required. It <strong style="color:var(--hd-text)">retrains automatically every 10 minutes</strong>
+                        as new attacks arrive, and each session gets an anomaly score (lower = more unusual).
+                      </p>
+                      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">
+                        <span class="badge" style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.35);font-weight:600">Login attempts</span>
+                        <span class="badge" style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.35);font-weight:600">Login success</span>
+                        <span class="badge" style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.35);font-weight:600">Commands run</span>
+                        <span class="badge" style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.35);font-weight:600">Files downloaded</span>
+                        <span class="badge" style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.35);font-weight:600">Session duration</span>
+                        <span class="badge" style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.35);font-weight:600">Login fail-ratio</span>
+                      </div>
+                    </div>
+                    <div class="col-lg-7">
+                      <h6 class="text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em"><i class="fas fa-braille mr-1"></i>Session Behaviour Map &mdash; Normal vs Anomalous</h6>
+                      <canvas id="mlScatterChart" style="height:260px;max-height:260px;max-width:100%"></canvas>
+                      <small class="text-muted" style="font-size:11px">Each dot is a session. The model isolates outliers <span style="color:#f85149;font-weight:600">(red)</span> from normal traffic <span style="color:#58a6ff;font-weight:600">(blue)</span> &mdash; anomalies are typically high attempt counts or heavy post-login activity.</small>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1249,7 +1276,7 @@
     loadAttackTypes(); loadSeverityTrend(); loadProtocolStats();
     loadHourlyData(); loadTopPorts(); loadTopAttackers(); loadUniqueAttackers();
     loadGeographicIntel(); loadNetworkIntel();
-    loadMapData(); loadHeatmap(); loadMlStats(); loadRecentEvents(); loadHighSeverityNotifs();
+    loadMapData(); loadHeatmap(); loadMlStats(); loadMlScatter(); loadRecentEvents(); loadHighSeverityNotifs();
     // Credential panels only when that workspace is visible
     if (showCred) { loadTopCredentials(); loadLoginBreakdown(); loadCredentialAnalysis(); }
     // Sensor-specific deep-dive panels only for the matching sensor (these are the heaviest queries)
@@ -1613,7 +1640,7 @@
   }
 
   // ═══════════════════════ CHARTS ══════════════════════════════════════════
-  var timelineChart, typesChart, hourlyChart, severityTrendChart, protocolChart, portsChart, uniqueAttackersChart, loginBreakdownChart;
+  var timelineChart, typesChart, hourlyChart, severityTrendChart, protocolChart, portsChart, uniqueAttackersChart, loginBreakdownChart, mlScatterChart;
   const GRID_CLR = 'rgba(255,255,255,0.05)', TICK_CLR = '#6c757d', LEG_CLR = '#adb5bd';
 
   function initCharts() {
@@ -1677,6 +1704,38 @@
         plugins:{ legend:{ position:'top', labels:{color:LEG_CLR,font:{size:11}} } },
         scales:{ x:{ticks:{color:TICK_CLR},grid:{color:GRID_CLR}}, y:{ticks:{color:TICK_CLR},grid:{color:GRID_CLR},beginAtZero:true} } }
     });
+
+    mlScatterChart = new Chart(document.getElementById('mlScatterChart').getContext('2d'), {
+      type:'scatter',
+      data:{ datasets:[
+        { label:'Normal sessions',      data:[], backgroundColor:'rgba(88,166,255,0.45)', pointRadius:4, pointHoverRadius:6 },
+        { label:'ML-flagged anomalies', data:[], backgroundColor:'rgba(248,81,73,0.9)',  pointRadius:6, pointHoverRadius:8 },
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'bottom', labels:{color:LEG_CLR,font:{size:10},padding:8} },
+          tooltip:{ callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.x} attempts, ${ctx.parsed.y} commands` } } },
+        scales:{
+          x:{ title:{display:true,text:'Login attempts',color:TICK_CLR}, ticks:{color:TICK_CLR}, grid:{color:GRID_CLR}, beginAtZero:true },
+          y:{ title:{display:true,text:'Commands run',color:TICK_CLR}, ticks:{color:TICK_CLR}, grid:{color:GRID_CLR}, beginAtZero:true }
+        }
+      }
+    });
+  }
+
+  async function loadMlScatter() {
+    try {
+      const d = await apiFetch(sensorParamFor('/api/sessions?limit=500'));
+      const items = d.items || [];
+      const normal = [], anomaly = [];
+      items.forEach(s => {
+        const pt = { x: Number(s.login_attempts) || 0, y: Number(s.commands_run) || 0 };
+        (s.is_anomaly ? anomaly : normal).push(pt);
+      });
+      if (!mlScatterChart) return;
+      mlScatterChart.data.datasets[0].data = normal;
+      mlScatterChart.data.datasets[1].data = anomaly;
+      mlScatterChart.update();
+    } catch(e) {}
   }
 
   async function loadTimelineData(range) {
@@ -2520,7 +2579,7 @@
     loadMapData(); loadTopAttackers(); loadTopCredentials();
     loadMalwareFeed(); loadSensorStatus(); loadHeatmap();
     loadUniqueAttackers(); loadLoginBreakdown();
-    loadRecentEvents(); loadHighSeverityNotifs(); loadMlStats();
+    loadRecentEvents(); loadHighSeverityNotifs(); loadMlStats(); loadMlScatter();
     loadCowrieDeep(); loadDionaeaDeep(); loadRemoteDeep(); loadGeographicIntel(); loadNetworkIntel(); loadCredentialAnalysis();
 
     // ── Fast: stats every 5 s ─────────────────────────────────────────────
@@ -2539,7 +2598,7 @@
     setInterval(() => { loadCowrieDeep(); loadDionaeaDeep(); loadRemoteDeep(); loadGeographicIntel(); loadNetworkIntel(); loadCredentialAnalysis(); }, 90000);
 
     // ── Very slow: map, timeline, heatmap every 60 s ──────────────────────
-    setInterval(() => { loadMapData(); loadTimelineData($('#timeRange').val()); loadHeatmap(); loadMlStats(); }, 60000);
+    setInterval(() => { loadMapData(); loadTimelineData($('#timeRange').val()); loadHeatmap(); loadMlStats(); loadMlScatter(); }, 60000);
 
     // ── Attacks/min + threat level every 5 s ──────────────────────────────
     setInterval(() => {
