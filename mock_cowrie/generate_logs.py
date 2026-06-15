@@ -19,6 +19,9 @@ _DEFAULT_LOG_PATH = os.path.join(
 LOG_PATH = os.environ.get("LOG_PATH", _DEFAULT_LOG_PATH)
 EVENTS_PER_SECOND = float(os.environ.get("EVENTS_PER_SECOND", "0.5"))
 SLEEP = 1.0 / EVENTS_PER_SECOND
+# Gentle demo pacing: ~1 event every MIN_EVENT_DELAY–MAX_EVENT_DELAY seconds
+MIN_DELAY = float(os.environ.get("MIN_EVENT_DELAY", "10"))
+MAX_DELAY = float(os.environ.get("MAX_EVENT_DELAY", "20"))
 
 # Pools of realistic attacker data
 ATTACKER_IPS = [
@@ -180,26 +183,25 @@ class Session:
 
 
 def main():
-    print(f"[mock-cowrie] Writing to {LOG_PATH} at {EVENTS_PER_SECOND} events/sec")
-    active_sessions = []
+    print(f"[mock-cowrie] Writing to {LOG_PATH} — ~1 event every {MIN_DELAY:.0f}-{MAX_DELAY:.0f}s")
+    session = Session()
 
     while True:
-        # Occasionally spawn a new session
-        if random.random() < 0.3 or not active_sessions:
-            active_sessions.append(Session())
+        # Emit exactly ONE real event per cycle. Skip internal None transitions,
+        # and roll a fresh attacker session once the current one finishes.
+        event = session.next_event()
+        guard = 0
+        while event is None and guard < 8:
+            guard += 1
+            if session.phase == "done":
+                session = Session()
+            event = session.next_event()
 
-        # Advance each active session one event
-        still_active = []
-        for sess in active_sessions:
-            event = sess.next_event()
-            if event:
-                write_event(event)
-                print(f"  {event['eventid']} from {event['src_ip']}")
-            if sess.phase != "done":
-                still_active.append(sess)
-        active_sessions = still_active
+        if event:
+            write_event(event)
+            print(f"  {event['eventid']} from {event['src_ip']}")
 
-        time.sleep(SLEEP)
+        time.sleep(random.uniform(MIN_DELAY, MAX_DELAY))
 
 
 if __name__ == "__main__":

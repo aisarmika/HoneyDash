@@ -26,6 +26,9 @@ SENSOR_API_KEY   = os.environ.get("SENSOR_API_KEY", "honeydash-sensor-key-change
 EVENTS_PER_SECOND = float(os.environ.get("EVENTS_PER_SECOND", "0.4"))
 SENSOR_NAME      = os.environ.get("SENSOR_NAME", "dionaea-01")
 SLEEP            = 1.0 / EVENTS_PER_SECOND
+# Gentle demo pacing: ~1 event every MIN_EVENT_DELAY–MAX_EVENT_DELAY seconds
+MIN_DELAY        = float(os.environ.get("MIN_EVENT_DELAY", "10"))
+MAX_DELAY        = float(os.environ.get("MAX_EVENT_DELAY", "20"))
 INGEST_URL       = f"{BACKEND_URL}/api/ingest/event"
 
 # ── Attacker IP pools (different from Cowrie to show separate sources) ─────
@@ -201,30 +204,30 @@ def wait_for_backend(max_tries: int = 30) -> bool:
 
 
 def main():
-    print(f"[mock-dionaea] Starting — target {INGEST_URL} at {EVENTS_PER_SECOND} events/sec")
+    print(f"[mock-dionaea] Target {INGEST_URL} — ~1 event every {MIN_DELAY:.0f}-{MAX_DELAY:.0f}s")
     if not wait_for_backend():
         print("[mock-dionaea] Backend never became ready — exiting")
         return
 
-    active_sessions: list[DionaeaSession] = []
+    session = DionaeaSession()
 
     while True:
-        # Spawn new session occasionally
-        if random.random() < 0.35 or not active_sessions:
-            active_sessions.append(DionaeaSession())
+        # Emit exactly ONE real event per cycle. Skip internal None transitions,
+        # and roll a fresh attacker session once the current one finishes.
+        event = session.next_event()
+        guard = 0
+        while event is None and guard < 8:
+            guard += 1
+            if session.phase == "done":
+                session = DionaeaSession()
+            event = session.next_event()
 
-        still_active = []
-        for sess in active_sessions:
-            event = sess.next_event()
-            if event:
-                ok = post_event(event)
-                status = "✓" if ok else "✗"
-                print(f"  {status} {event['eventid']} [{event['protocol'].upper()}] from {event['src_ip']}")
-            if sess.phase != "done":
-                still_active.append(sess)
-        active_sessions = still_active
+        if event:
+            ok = post_event(event)
+            status = "OK" if ok else "FAIL"
+            print(f"  {status} {event['eventid']} [{event['protocol'].upper()}] from {event['src_ip']}")
 
-        time.sleep(SLEEP)
+        time.sleep(random.uniform(MIN_DELAY, MAX_DELAY))
 
 
 if __name__ == "__main__":
